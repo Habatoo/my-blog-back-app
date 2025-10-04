@@ -37,14 +37,16 @@ public class Post {
     private String text;
 
     /**
-     * Количество лайков поста.
+     * Количество лайков поста
      */
-    private Integer likesCount;
+    @Builder.Default
+    private Integer likesCount = 0;
 
     /**
-     * Количество комментариев к посту.
+     * Количество комментариев поста
      */
-    private Integer commentsCount;
+    @Builder.Default
+    private Integer commentsCount = 0;
 
     /**
      * URL или путь к изображению поста.
@@ -62,14 +64,16 @@ public class Post {
     private Integer imageSize;
 
     /**
-     * Дата и время создания поста.
+     * Дата и время создания поста
      */
-    private LocalDateTime createdAt;
+    @Builder.Default
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     /**
-     * Дата и время последнего обновления поста.
+     * Дата и время обновления поста
      */
-    private LocalDateTime updatedAt;
+    @Builder.Default
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     /**
      * Набор тегов, связанных с постом через отношение многие-ко-многим.

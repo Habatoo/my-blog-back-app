@@ -104,7 +104,7 @@ UNION ALL SELECT 'tutorial', CURRENT_TIMESTAMP WHERE NOT EXISTS (SELECT 1 FROM t
 INSERT INTO post (title, text, likes_count, comments_count, created_at, updated_at) VALUES
 ('Мой первый пост о Java', 'Изучаю Java и Spring Framework. Очень интересная технология!', 5, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Spring Boot преимущества', 'Spring Boot упрощает разработку приложений. Автоконфигурация - это круто!', 8, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Работа с базами данных', 'Рассказываю о основах работы с PostgreSQL и H2 в Spring приложениях.', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Работа с базами данных', 'Рассказываю о основах работы с PostgreSQL и H2 в Spring приложениях. И еще добиваем число символов больше 128 и проверяем разные символы 1234567890!"№;%:?*()_/{}[]', 3, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Советы по программированию', 'Несколько полезных советов для начинающих разработчиков.', 2, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('Без тегов пример', 'Этот пост создан без тегов для демонстрации.', 1, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 

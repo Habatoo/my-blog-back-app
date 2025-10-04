@@ -1,8 +1,11 @@
-package io.github.habatoo.repository;
+package io.github.habatoo.repository.impl;
 
 import io.github.habatoo.model.Comment;
+import io.github.habatoo.model.Post;
+import io.github.habatoo.repository.CommentRepository;
+import io.github.habatoo.repository.PostRepository;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -30,9 +33,13 @@ import java.util.Optional;
 public class CommentRepositoryImpl implements CommentRepository {
 
     private final JdbcTemplate jdbcTemplate;
+    private final PostRepository postRepository;
 
-    public CommentRepositoryImpl(JdbcTemplate jdbcTemplate) {
+    public CommentRepositoryImpl(
+            JdbcTemplate jdbcTemplate,
+            PostRepository postRepository) {
         this.jdbcTemplate = jdbcTemplate;
+        this.postRepository = postRepository;
     }
 
     /**
@@ -91,20 +98,25 @@ public class CommentRepositoryImpl implements CommentRepository {
      *
      * @param comment комментарий для сохранения, должен содержать валидные postId, text и временные метки
      * @return сохраненный комментарий с присвоенным идентификатором
-     * @throws DataIntegrityViolationException если пост с указанным postId не существует
+     * @throws EmptyResultDataAccessException если пост с указанным postId не существует
      * @throws DataAccessException             при ошибках доступа к базе данных
      */
     @Transactional
     @Override
     public Comment save(Comment comment) {
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+        Long postId = comment.getPostId();
+        Optional<Post> existingPost = postRepository.findByIdWithFullContent(postId);
+        if (existingPost.isEmpty()) {
+            throw new EmptyResultDataAccessException("Post with id " + postId + " not found", 1);
+        }
 
+        KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     "INSERT INTO comment (post_id, text, created_at, updated_at) VALUES (?, ?, ?, ?)",
                     new String[]{"id"}
             );
-            ps.setLong(1, comment.getPostId());
+            ps.setLong(1, postId);
             ps.setString(2, comment.getText());
             ps.setTimestamp(3, Timestamp.valueOf(comment.getCreatedAt()));
             ps.setTimestamp(4, Timestamp.valueOf(comment.getUpdatedAt()));
@@ -117,7 +129,7 @@ public class CommentRepositoryImpl implements CommentRepository {
         jdbcTemplate.update(
                 "UPDATE post SET comments_count = comments_count + 1, updated_at = ? WHERE id = ?",
                 LocalDateTime.now(),
-                comment.getPostId()
+                postId
         );
 
         return comment;

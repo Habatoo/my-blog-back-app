@@ -1,6 +1,7 @@
 package io.github.habatoo.repository;
 
 import io.github.habatoo.model.Comment;
+import io.github.habatoo.repository.impl.CommentRepositoryImpl;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;

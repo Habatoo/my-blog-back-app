@@ -4,7 +4,7 @@ import io.github.habatoo.controller.dto.CommentRequest;
 import io.github.habatoo.model.Comment;
 import io.github.habatoo.service.CommentService;
 import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -86,7 +86,7 @@ public class CommentController {
             Comment createdComment = commentService.createComment(postId, commentRequest.text());
             return ResponseEntity.status(HttpStatus.CREATED).body(createdComment);
 
-        } catch (DataIntegrityViolationException e) {
+        } catch (EmptyResultDataAccessException e) {
             // Ошибка целостности данных (пост не найден)
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Post not found with id: " + postId));
