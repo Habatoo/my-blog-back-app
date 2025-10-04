@@ -4,7 +4,9 @@ import io.github.habatoo.model.Comment;
 import io.github.habatoo.repository.CommentRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Сервис для работы с комментариями блога.
@@ -41,4 +43,62 @@ public class CommentService {
     public List<Comment> getCommentsByPostId(Long postId) {
         return commentRepository.findByPostId(postId);
     }
+
+    /**
+     * Получение комментария по идентификаторам поста и комментария.
+     *
+     * @param postId    идентификатор поста для проверки принадлежности
+     * @param commentId идентификатор комментария для получения
+     * @return {@code Optional} содержащий комментарий если найден и принадлежит посту,
+     * иначе пустой {@code Optional}
+     */
+    public Optional<Comment> getCommentByPostIdAndId(Long postId, Long commentId) {
+        return commentRepository.findByPostIdAndId(postId, commentId);
+    }
+
+    /**
+     * Создание нового комментария для указанного поста.
+     * Устанавливает временные метки создания и обновления.
+     *
+     * @param postId идентификатор поста для комментария
+     * @param text   текст комментария
+     * @return созданный комментарий с присвоенным идентификатором
+     */
+    public Comment createComment(Long postId, String text) {
+        Comment comment = Comment.builder()
+                .postId(postId)
+                .text(text)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        return commentRepository.save(comment);
+    }
+
+    /**
+     * Обновление комментария по идентификаторам поста и комментария.
+     * Проверяет принадлежность комментария посту перед обновлением.
+     *
+     * @param postId    идентификатор поста для проверки принадлежности
+     * @param commentId идентификатор комментария для обновления
+     * @param text      новый текст комментария
+     * @return Optional с обновленным комментарием если найден и обновлен,
+     * иначе пустой Optional
+     */
+    public Optional<Comment> updateComment(Long postId, Long commentId, String text) {
+        return commentRepository.updateTextAndUpdatedAt(postId, commentId, text);
+    }
+
+    /**
+     * Удаление комментария по идентификаторам поста и комментария.
+     * Проверяет принадлежность комментария посту перед удалением.
+     *
+     * @param postId    идентификатор поста для проверки принадлежности
+     * @param commentId идентификатор комментария для удаления
+     * @return true если комментарий найден и удален, false если не найден
+     */
+    public boolean deleteComment(Long postId, Long commentId) {
+        return commentRepository.deleteById(postId, commentId);
+    }
+
 }
