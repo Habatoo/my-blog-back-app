@@ -5,6 +5,7 @@ import io.github.habatoo.model.Post;
 import io.github.habatoo.repository.CommentRepository;
 import io.github.habatoo.repository.PostRepository;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -19,7 +20,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -98,13 +98,27 @@ public class CommentRepositoryImpl implements CommentRepository {
      *
      * @param comment комментарий для сохранения, должен содержать валидные postId, text и временные метки
      * @return сохраненный комментарий с присвоенным идентификатором
+     * @throws IllegalArgumentException       если postId не передан или null
      * @throws EmptyResultDataAccessException если пост с указанным postId не существует
-     * @throws DataAccessException             при ошибках доступа к базе данных
+     * @throws DataRetrievalFailureException  если после обновления не сгенерирован postId
+     * @throws DataAccessException            при ошибках доступа к базе данных
      */
     @Transactional
     @Override
     public Comment save(Comment comment) {
         Long postId = comment.getPostId();
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+
+        if (comment.getText() == null || comment.getText().trim().isEmpty()) {
+            throw new IllegalArgumentException("Comment text cannot be null or empty");
+        }
+
+        if (comment.getCreatedAt() == null || comment.getUpdatedAt() == null) {
+            throw new IllegalArgumentException("Comment timestamps cannot be null");
+        }
+
         Optional<Post> existingPost = postRepository.findByIdWithFullContent(postId);
         if (existingPost.isEmpty()) {
             throw new EmptyResultDataAccessException("Post with id " + postId + " not found", 1);
@@ -123,14 +137,22 @@ public class CommentRepositoryImpl implements CommentRepository {
             return ps;
         }, keyHolder);
 
-        Long id = Objects.requireNonNull(keyHolder.getKey()).longValue();
-        comment.setId(id);
+        Number key = keyHolder.getKey();
+        if (key == null) {
+            throw new DataRetrievalFailureException("Failed to retrieve generated key for comment");
+        }
 
-        jdbcTemplate.update(
+        Long id = key.longValue();
+        comment.setId(id);
+        int updatedRows = jdbcTemplate.update(
                 "UPDATE post SET comments_count = comments_count + 1, updated_at = ? WHERE id = ?",
                 LocalDateTime.now(),
                 postId
         );
+
+        if (updatedRows == 0) {
+            throw new DataAccessException("Failed to update post comments count") {};
+        }
 
         return comment;
     }
@@ -143,6 +165,8 @@ public class CommentRepositoryImpl implements CommentRepository {
      * @param commentId идентификатор комментария для обновления
      * @param text      новый текст комментария
      * @return обновленный комментарий
+     * @throws IllegalArgumentException       если postId/commentId не передан или null
+     * @throws DataAccessException            при ошибках доступа к базе данных
      */
     @Transactional
     @Override
@@ -150,12 +174,32 @@ public class CommentRepositoryImpl implements CommentRepository {
             Long postId,
             Long commentId,
             String text) {
-        jdbcTemplate.update(
-                "UPDATE comment SET text = ?, updated_at = ? WHERE id = ?",
+
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (commentId == null) {
+            throw new IllegalArgumentException("Comment ID cannot be null");
+        }
+        if (text == null || text.trim().isEmpty()) {
+            throw new IllegalArgumentException("Comment text cannot be null or empty");
+        }
+
+        Optional<Comment> existingComment = findByPostIdAndId(postId, commentId);
+        if (existingComment.isEmpty()) {
+            return Optional.empty();
+        }
+        int updatedRows = jdbcTemplate.update(
+                "UPDATE comment SET text = ?, updated_at = ? WHERE id = ? AND post_id = ?",
                 text,
                 LocalDateTime.now(),
-                commentId
+                commentId,
+                postId
         );
+
+        if (updatedRows == 0) {
+            return Optional.empty();
+        }
 
         return findByPostIdAndId(postId, commentId);
     }
@@ -167,10 +211,21 @@ public class CommentRepositoryImpl implements CommentRepository {
      * @param postId    идентификатор поста для проверки принадлежности
      * @param commentId идентификатор комментария для удаления
      * @return true если комментарий удален, false если не найден
+     * @throws IllegalArgumentException       если postId/commentId не передан или null
+     * @throws EmptyResultDataAccessException если комментарий  или пост с указанными id не существуют
+     * @throws DataRetrievalFailureException  если обновление не прошло
+     * @throws DataAccessException            при ошибках доступа к базе данных
      */
     @Transactional
     @Override
     public boolean deleteById(Long postId, Long commentId) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+        if (commentId == null) {
+            throw new IllegalArgumentException("Comment ID cannot be null");
+        }
+
         int deletedRows = jdbcTemplate.update(
                 "DELETE FROM comment WHERE id = ? AND post_id = ?",
                 commentId,
@@ -180,11 +235,22 @@ public class CommentRepositoryImpl implements CommentRepository {
         boolean deleteResult = deletedRows > 0;
 
         if (deleteResult) {
-            jdbcTemplate.update(
+            Optional<Post> existingPost = postRepository.findByIdWithFullContent(postId);
+            if (existingPost.isEmpty()) {
+                throw new EmptyResultDataAccessException("Post with id " + postId + " not found", 1);
+            }
+
+            int updatedRows = jdbcTemplate.update(
                     "UPDATE post SET comments_count = comments_count - 1, updated_at = ? WHERE id = ?",
                     LocalDateTime.now(),
                     postId
             );
+
+            if (updatedRows == 0) {
+                throw new DataAccessException("Failed to update post comments count") {};
+            }
+        } else {
+            throw new EmptyResultDataAccessException("Comment not found", 1);
         }
 
         return deleteResult;
@@ -227,7 +293,10 @@ public class CommentRepositoryImpl implements CommentRepository {
          */
         private LocalDateTime getLocalDateTime(ResultSet rs, String columnName) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(columnName);
-            return timestamp != null ? timestamp.toLocalDateTime() : null;
+            if (timestamp == null || rs.wasNull()) {
+                return null;
+            }
+            return timestamp.toLocalDateTime();
         }
     }
 

@@ -120,12 +120,19 @@ public class PostRepositoryImpl implements PostRepository {
      * @param postRequest объект запроса с данными для создания поста, содержащий
      *                    название, текст и список тегов
      * @return созданный объект {@link Post} с присвоенным идентификатором и обработанными тегами
-     * @throws IllegalStateException если сгенерированный ключ равен null
+     * @throws IllegalStateException если исходный или сгенерированный ключ равен null
      * @throws DataAccessException   при ошибках доступа к базе данных
      */
     @Override
     @Transactional
     public Post save(PostRequest postRequest) {
+        if (postRequest == null) {
+            throw new IllegalArgumentException("PostRequest cannot be null");
+        }
+        if (postRequest.getTitle() == null || postRequest.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Post title cannot be null or empty");
+        }
+
         final String sql = "INSERT INTO post (title, text) VALUES (?, ?)";
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -142,7 +149,7 @@ public class PostRepositoryImpl implements PostRepository {
             throw new IllegalStateException("Failed to generate primary key for new post");
         }
 
-        Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
+        Long generatedId = key.longValue();
         Set<PostTag> postTags = processPostTags(generatedId, postRequest.getTags());
 
         return Post.builder()
@@ -161,12 +168,20 @@ public class PostRepositoryImpl implements PostRepository {
      * @param postRequest объект запроса с данными для обновления поста, содержащий
      *                    идентификатор, новое название, текст и список тегов
      * @return обновленный объект {@link Post} с актуальными данными и тегами
+     * @throws IllegalArgumentException       если запрос или ID null
      * @throws EmptyResultDataAccessException если пост с указанным ID не найден
      * @throws DataAccessException            при ошибках доступа к базе данных
      */
     @Override
     @Transactional
     public Post update(PostRequest postRequest) {
+        if (postRequest == null) {
+            throw new IllegalArgumentException("PostRequest cannot be null");
+        }
+        if (postRequest.getId() == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+
         Long id = postRequest.getId();
         Optional<Post> existingPost = findByIdWithFullContent(id);
         if (existingPost.isEmpty()) {
@@ -174,13 +189,18 @@ public class PostRepositoryImpl implements PostRepository {
         }
 
         final String sql = "UPDATE post SET title = ?, text = ?, updated_at = ? WHERE id = ?";
-        jdbcTemplate.update(
+        int updatedRows = jdbcTemplate.update(
                 sql,
                 postRequest.getTitle(),
                 postRequest.getText(),
                 Timestamp.valueOf(LocalDateTime.now()),
                 id
         );
+
+        if (updatedRows == 0) {
+            throw new DataAccessException("Post was concurrently modified or deleted") {
+            };
+        }
 
         Set<PostTag> postTags = processPostTags(id, postRequest.getTags());
         Integer likesCount = existingPost.map(Post::getLikesCount).orElse(0);
@@ -219,15 +239,15 @@ public class PostRepositoryImpl implements PostRepository {
      *
      * @param id идентификатор поста для увеличения лайков
      * @return обновленное количество лайков поста
+     * @throws IllegalStateException          число лайков null
      * @throws EmptyResultDataAccessException если пост с указанным идентификатором не найден
      * @throws DataAccessException            при ошибках доступа к базе данных
      */
     @Override
     @Transactional
     public int incrementLikes(Long id) {
-        Optional<Post> existingPost = findByIdWithFullContent(id);
-        if (existingPost.isEmpty()) {
-            throw new EmptyResultDataAccessException("Post with id " + id + " not found", 1);
+        if (id == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
         }
 
         final String updateSql = "UPDATE post SET likes_count = likes_count + 1 WHERE id = ?";
@@ -257,11 +277,23 @@ public class PostRepositoryImpl implements PostRepository {
      * @param postId   идентификатор поста для привязки тегов
      * @param tagNames список имен тегов для обработки, может быть null или пустым
      * @return набор связей {@link PostTag} между постом и тегами
+     * @throws IllegalStateException если postId null или в списке тэгов null
+     * @throws DataAccessException   при ошибках доступа к базе данных
      */
-    private Set<PostTag> processPostTags(Long postId, List<String> tagNames) {
+    private Set<PostTag> processPostTags(
+            Long postId,
+            List<String> tagNames) {
+        if (postId == null) {
+            throw new IllegalArgumentException("Post ID cannot be null");
+        }
+
         if (tagNames == null || tagNames.isEmpty()) {
             jdbcTemplate.update("DELETE FROM post_tag WHERE post_id = ?", postId);
             return new HashSet<>();
+        }
+
+        if (tagNames.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException("Tag names list cannot contain null values");
         }
 
         jdbcTemplate.update("DELETE FROM post_tag WHERE post_id = ?", postId);
@@ -372,7 +404,10 @@ public class PostRepositoryImpl implements PostRepository {
          */
         private LocalDateTime getLocalDateTime(ResultSet rs, String columnName) throws SQLException {
             Timestamp timestamp = rs.getTimestamp(columnName);
-            return timestamp != null ? timestamp.toLocalDateTime() : null;
+            if (timestamp == null || rs.wasNull()) {
+                return null;
+            }
+            return timestamp.toLocalDateTime();
         }
     }
 }

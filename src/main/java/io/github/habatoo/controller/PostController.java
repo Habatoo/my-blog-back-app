@@ -64,12 +64,21 @@ public class PostController {
      * @return ResponseEntity с созданным постом в формате JSON
      */
     @PostMapping
-    public ResponseEntity<Post> createPost(
+    public ResponseEntity<?> createPost(
             @RequestBody PostRequest postRequest) {
-        Post response = postService.createPost(postRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return handlePostOperation(
+                () -> postService.createPost(postRequest),
+                HttpStatus.CREATED,
+                null
+        );
     }
 
+    /**
+     * Исправление существующего поста
+     *
+     * @param id идентификатор поста для исправления из пути запроса
+     * @return ResponseEntity с исправленным постом в формате JSON
+     */
     @PutMapping("/{id}")
     public ResponseEntity<?> updatePost(
             @PathVariable("id") Long id,
@@ -138,13 +147,17 @@ public class PostController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of("error", "Post not found"));
 
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+
         } catch (DataAccessException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Database error"));
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Invalid request data"));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal server error"));
         }
     }
 
