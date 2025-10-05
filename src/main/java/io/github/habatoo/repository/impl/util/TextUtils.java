@@ -1,4 +1,4 @@
-package io.github.habatoo.util;
+package io.github.habatoo.repository.impl.util;
 
 import lombok.experimental.UtilityClass;
 

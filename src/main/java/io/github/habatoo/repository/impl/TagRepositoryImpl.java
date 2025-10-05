@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import static io.github.habatoo.repository.sql.TagSqlQueries.INSERT_INTO_TAG;
+import static io.github.habatoo.repository.sql.TagSqlQueries.SELECT_FROM_TAG;
+
 /**
  * Реализация репозитория для работы с тегами
  */
@@ -26,10 +29,13 @@ public class TagRepositoryImpl implements TagRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<Tag> findByName(String name) {
         List<Tag> tags = jdbcTemplate.query(
-                "SELECT id, name, created_at FROM tag WHERE name = ?",
+                SELECT_FROM_TAG,
                 (rs, rowNum) -> Tag.builder()
                         .id(rs.getLong("id"))
                         .name(rs.getString("name"))
@@ -40,14 +46,15 @@ public class TagRepositoryImpl implements TagRepository {
         return tags.stream().findFirst();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Tag save(String tagName) {
-        final String sql = "INSERT INTO tag (name, created_at) VALUES (?, ?)";
-
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+            PreparedStatement ps = connection.prepareStatement(INSERT_INTO_TAG, new String[]{"id"});
             ps.setString(1, tagName);
             ps.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
             return ps;
@@ -55,7 +62,6 @@ public class TagRepositoryImpl implements TagRepository {
 
         Long generatedId = Objects.requireNonNull(keyHolder.getKey()).longValue();
 
-        // Создаем и возвращаем сформированный тег
         return Tag.builder()
                 .id(generatedId)
                 .name(tagName)

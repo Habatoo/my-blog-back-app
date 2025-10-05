@@ -1,10 +1,10 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.dto.request.PostCreateRequest;
 import io.github.habatoo.dto.request.PostRequest;
 import io.github.habatoo.dto.response.PostListResponse;
 import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.repository.PostRepository;
-import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
@@ -18,14 +18,7 @@ import java.util.Optional;
  * @see PostRepository
  * @see PostResponse
  */
-@Service
-public class PostService {
-
-    private final PostRepository postRepository;
-
-    public PostService(PostRepository postRepository) {
-        this.postRepository = postRepository;
-    }
+public interface PostService {
 
     /**
      * Получает посты из системы.
@@ -37,9 +30,7 @@ public class PostService {
      * Если посты отсутствуют, возвращается пустой список
      * @see PostRepository#findPostsWithPagination
      */
-    public PostListResponse getPosts(String search, int pageNumber, int pageSize) {
-        return postRepository.findPostsWithPagination(search, pageNumber, pageSize);
-    }
+    PostListResponse getPosts(String search, int pageNumber, int pageSize);
 
     /**
      * Получение поста по идентификатору с полной информацией.
@@ -48,19 +39,15 @@ public class PostService {
      * @param id идентификатор поста
      * @return Optional с постом если найден
      */
-    public Optional<PostResponse> getPostById(Long id) {
-        return postRepository.findByIdWithFullContent(id);
-    }
+    Optional<PostResponse> getPostById(Long id);
 
     /**
      * Создание нового поста с тегами.
      *
-     * @param postRequest DTO с данными для создания поста
+     * @param postCreateRequest DTO с данными для создания поста
      * @return DTO с созданным постом
      */
-    public PostResponse createPost(PostRequest postRequest) {
-        return postRepository.save(postRequest);
-    }
+    PostResponse createPost(PostCreateRequest postCreateRequest);
 
     /**
      * Обновление существующего поста
@@ -68,9 +55,7 @@ public class PostService {
      * @param postRequest DTO с данными для обновления поста
      * @return обновленный пост
      */
-    public PostResponse updatePost(PostRequest postRequest) {
-        return postRepository.update(postRequest);
-    }
+    PostResponse updatePost(PostRequest postRequest);
 
     /**
      * Удаляет пост по идентификатору вместе со всеми комментариями и связями с тегами
@@ -78,9 +63,7 @@ public class PostService {
      * @param id идентификатор поста для удаления
      * @throws RuntimeException если пост с указанным идентификатором не найден
      */
-    public void deletePost(Long id) {
-        postRepository.deleteById(id);
-    }
+    void deletePost(Long id);
 
     /**
      * Увеличивает счетчик лайков поста на 1
@@ -88,7 +71,5 @@ public class PostService {
      * @param id идентификатор поста для увеличения лайков
      * @return обновленное количество лайков поста
      */
-    public int incrementLikes(Long id) {
-        return postRepository.incrementLikes(id);
-    }
+    int incrementLikes(Long id);
 }

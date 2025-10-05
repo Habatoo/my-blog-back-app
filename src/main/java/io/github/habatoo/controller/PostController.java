@@ -1,6 +1,8 @@
 package io.github.habatoo.controller;
 
+import io.github.habatoo.dto.request.PostCreateRequest;
 import io.github.habatoo.dto.request.PostRequest;
+import io.github.habatoo.dto.response.PostListResponse;
 import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.service.PostService;
 import org.springframework.dao.DataAccessException;
@@ -9,14 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-import java.util.function.Supplier;
-
 /**
- * Контроллер по работе с постами.
+ * Контроллер для управления постами блога.
  *
- * <p>Предоставляет REST API endpoints для операций с постами блога.
- * Обрабатывает HTTP запросы и возвращает данные в формате JSON.</p>
+ * <p>Предоставляет REST API endpoints для выполнения CRUD операций с постами.
+ * Поддерживает создание, чтение, обновление и удаление постов, а также управление лайками.
+ * Все endpoints возвращают данные в формате JSON.</p>
  */
 @RestController
 @RequestMapping("/api/posts")
@@ -24,149 +24,123 @@ public class PostController {
 
     private final PostService postService;
 
+    /**
+     * Конструктор контроллера постов.
+     *
+     * @param postService сервис для бизнес-логики работы с постами
+     */
     public PostController(PostService postService) {
         this.postService = postService;
     }
 
     /**
-     * Получение списка постов с пагинацией и поиском
+     * Получает пагинированный список постов с возможностью поиска.
      *
-     * <p>Обрабатывает GET запросы по пути {@code /api/posts} с параметрами:
-     * search, pageNumber, pageSize для пагинации и поиска постов.</p>
+     * <p>Обрабатывает GET запросы для получения списка постов с поддержкой
+     * пагинации и полнотекстового поиска по заголовку и содержимому постов.</p>
      *
-     * @param search     строка поиска (обязательный)
-     * @param pageNumber номер страницы (обязательный)
-     * @param pageSize   размер страницы (обязательный)
-     * @return ответ с пагинированным списком постов
+     * @param search     строка для поиска по заголовку и содержимому постов
+     * @param pageNumber номер страницы для пагинации (начинается с 1)
+     * @param pageSize   количество постов на одной странице
+     * @return список постов с метаданными пагинации
+     * @throws IllegalArgumentException если параметры пагинации невалидны
      */
     @GetMapping
-    public ResponseEntity<?> getPosts(
+    public ResponseEntity<PostListResponse> getPosts(
             @RequestParam("search") String search,
             @RequestParam("pageNumber") int pageNumber,
             @RequestParam("pageSize") int pageSize) {
-        return handlePostOperation(
-                () -> postService.getPosts(search, pageNumber, pageSize),
-                HttpStatus.OK,
-                null
-        );
+
+        PostListResponse result = postService.getPosts(search, pageNumber, pageSize);
+        return ResponseEntity.ok(result);
     }
 
     /**
-     * Обработчик HTTP GET запроса для получения конкретного поста.
-     * Возвращает полную информацию о посте включая теги и количество комментариев.
+     * Получает полную информацию о посте по идентификатору.
      *
-     * @param id идентификатор поста из пути запроса
-     * @return ResponseEntity с постом или 404 если не найден
+     * <p>Возвращает подробную информацию о посте включая теги, количество лайков
+     * и комментариев. Если пост не найден, возвращает статус 404 Not Found.</p>
+     *
+     * @param id идентификатор запрашиваемого поста
+     * @return пост с полной информацией или 404 если не найден
+     * @throws IllegalArgumentException если идентификатор невалиден
      */
     @GetMapping("/{id}")
-    public ResponseEntity<PostResponse> getPostById(
-            @PathVariable("id") Long id) {
+    public ResponseEntity<PostResponse> getPostById(@PathVariable("id") Long id) {
         return postService.getPostById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     /**
-     * Создание нового поста
+     * Создает новый пост в блоге.
      *
-     * @param postRequest DTO с данными для создания поста
-     * @return ResponseEntity с созданным постом в формате JSON
+     * <p>Принимает данные для создания поста, валидирует их и сохраняет в системе.
+     * Возвращает созданный пост с присвоенным идентификатором.</p>
+     *
+     * @param postCreateRequest данные для создания нового поста
+     * @return созданный пост со статусом 201 Created
+     * @throws IllegalArgumentException если данные запроса невалидны
+     * @throws DataAccessException      при ошибках сохранения в базу данных
      */
     @PostMapping
-    public ResponseEntity<?> createPost(
-            @RequestBody PostRequest postRequest) {
-        return handlePostOperation(
-                () -> postService.createPost(postRequest),
-                HttpStatus.CREATED,
-                null
-        );
+    public ResponseEntity<PostResponse> createPost(@RequestBody PostCreateRequest postCreateRequest) {
+        PostResponse result = postService.createPost(postCreateRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     /**
-     * Исправление существующего поста
+     * Обновляет существующий пост.
      *
-     * @param id идентификатор поста для исправления из пути запроса
-     * @return ResponseEntity с исправленным постом в формате JSON
+     * <p>Обновляет заголовок, содержимое и теги указанного поста.
+     * Если пост не найден, выбрасывает исключение.</p>
+     *
+     * @param id          идентификатор обновляемого поста
+     * @param postRequest данные для обновления поста
+     * @return обновленный пост
+     * @throws IllegalArgumentException       если данные запроса невалидны
+     * @throws EmptyResultDataAccessException если пост с указанным ID не найден
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePost(
+    public ResponseEntity<PostResponse> updatePost(
             @PathVariable("id") Long id,
-            @RequestBody PostRequest postRequest
-    ) {
-        return handlePostOperation(
-                () -> postService.updatePost(postRequest),
-                HttpStatus.OK,
-                null
-        );
+            @RequestBody PostRequest postRequest) {
+
+        PostResponse result = postService.updatePost(postRequest);
+        return ResponseEntity.ok(result);
     }
 
     /**
-     * Удаляет пост по идентификатору вместе со всеми комментариями
+     * Удаляет пост по идентификатору.
      *
-     * @param id идентификатор поста для удаления
-     * @return ResponseEntity со статусом 200 OK при успешном удалении
+     * <p>Удаляет пост вместе со всеми связанными комментариями и тегами.
+     * Если пост не найден, выбрасывает исключение.</p>
+     *
+     * @param id идентификатор удаляемого поста
+     * @return пустой ответ со статусом 200 OK при успешном удалении
+     * @throws IllegalArgumentException       если идентификатор невалиден
+     * @throws EmptyResultDataAccessException если пост с указанным ID не найден
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePost(@PathVariable("id") Long id) {
-        return handlePostOperation(
-                () -> {
-                    postService.deletePost(id);
-                    return null;
-                },
-                HttpStatus.OK,
-                null
-        );
+    public ResponseEntity<Void> deletePost(@PathVariable("id") Long id) {
+        postService.deletePost(id);
+        return ResponseEntity.ok().build();
     }
 
     /**
-     * Увеличивает счетчик лайков поста на 1
+     * Увеличивает счетчик лайков поста на единицу.
+     *
+     * <p>Атомарно увеличивает количество лайков у указанного поста.
+     * Возвращает обновленное количество лайков.</p>
      *
      * @param id идентификатор поста для увеличения лайков
-     * @return обновленное количество лайков поста в теле ответа при успешном увеличении
+     * @return обновленное количество лайков поста
+     * @throws IllegalArgumentException       если идентификатор невалиден
+     * @throws EmptyResultDataAccessException если пост с указанным ID не найден
      */
     @PostMapping("/{id}/likes")
-    public ResponseEntity<?> incrementLikes(
-            @PathVariable("id") Long id) {
-        return handlePostOperation(
-                () -> postService.incrementLikes(id),
-                HttpStatus.OK,
-                null
-        );
+    public ResponseEntity<Integer> incrementLikes(@PathVariable("id") Long id) {
+        int likesCount = postService.incrementLikes(id);
+        return ResponseEntity.ok(likesCount);
     }
-
-    /**
-     * Обрабатывает операции с постами и возвращает соответствующий ResponseEntity
-     *
-     * @param operation     лямбда-выражение с операцией над постом
-     * @param successStatus HTTP статус для успешного выполнения
-     * @param successBody   тело ответа для успешного выполнения
-     * @return ResponseEntity с результатом операции
-     */
-    private ResponseEntity<?> handlePostOperation(
-            Supplier<Object> operation,
-            HttpStatus successStatus,
-            Object successBody
-    ) {
-        try {
-            Object result = operation.get();
-            return ResponseEntity.status(successStatus).body(successBody != null ? successBody : result);
-
-        } catch (EmptyResultDataAccessException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", "Post not found"));
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-
-        } catch (DataAccessException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Database error"));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Internal server error"));
-        }
-    }
-
 }

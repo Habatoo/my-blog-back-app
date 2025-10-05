@@ -1,13 +1,13 @@
-package io.github.habatoo.util;
+package io.github.habatoo.repository.impl.util;
 
-import io.github.habatoo.dto.request.PostRequest;
+import io.github.habatoo.dto.request.PostRequestValidation;
 import lombok.experimental.UtilityClass;
 
 /**
  * Утилитный класс для валидации данных.
  */
 @UtilityClass
-public final class ValidationUtils {
+public final class PostValidationUtils {
 
     /**
      * Валидирует данные запроса
@@ -35,7 +35,7 @@ public final class ValidationUtils {
      * @param postRequest запрос на создание/изменение поста.
      * @throws IllegalStateException входные данные содержат/равны null
      */
-    public static void validatePostRequest(PostRequest postRequest) {
+    public static void validatePostRequest(PostRequestValidation postRequest) {
         if (postRequest == null) {
             throw new IllegalArgumentException("PostRequest cannot be null");
         }

@@ -1,6 +1,6 @@
 package io.github.habatoo.repository;
 
-import io.github.habatoo.dto.request.CommentRequest;
+import io.github.habatoo.dto.request.CommentCreateRequest;
 import io.github.habatoo.dto.response.CommentResponse;
 import io.github.habatoo.model.Comment;
 import io.github.habatoo.repository.impl.CommentRepositoryImpl;
@@ -53,10 +53,10 @@ public interface CommentRepository extends Repository<Comment, Long> {
     /**
      * Сохранение нового комментария.
      *
-     * @param commentRequest объект комментария для сохранения
+     * @param commentCreateRequest объект комментария для сохранения
      * @return сохраненный комментарий с присвоенным идентификатором
      */
-    CommentResponse save(CommentRequest commentRequest);
+    CommentResponse save(CommentCreateRequest commentCreateRequest);
 
     /**
      * Обновление текста комментария и временной метки.
