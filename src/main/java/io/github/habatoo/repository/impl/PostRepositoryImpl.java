@@ -1,32 +1,33 @@
 package io.github.habatoo.repository.impl;
 
-import io.github.habatoo.controller.dto.PostListResponse;
-import io.github.habatoo.controller.dto.PostRequest;
-import io.github.habatoo.controller.dto.PostResponse;
-import io.github.habatoo.model.Comment;
-import io.github.habatoo.model.Post;
+import io.github.habatoo.dto.request.PostRequest;
+import io.github.habatoo.dto.response.PostListResponse;
+import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.model.PostTag;
 import io.github.habatoo.model.Tag;
 import io.github.habatoo.repository.PostRepository;
 import io.github.habatoo.repository.PostTagRepository;
 import io.github.habatoo.repository.TagRepository;
+import io.github.habatoo.repository.mapper.PostRowMappers;
+import io.github.habatoo.repository.sql.PostSqlQueries;
 import io.github.habatoo.service.FileStorageService;
+import io.github.habatoo.util.ValidationUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Реализация репозитория для работы с постами блога.
@@ -45,151 +46,68 @@ public class PostRepositoryImpl implements PostRepository {
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
     private final FileStorageService fileStorageService;
+    private final PostRowMappers.PostListRowMapper postListRowMapper;
 
     public PostRepositoryImpl(
             JdbcTemplate jdbcTemplate,
             TagRepository tagRepository,
             PostTagRepository postTagRepository,
-            FileStorageService fileStorageService) {
+            FileStorageService fileStorageService,
+            PostRowMappers.PostListRowMapper postListRowMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.tagRepository = tagRepository;
         this.postTagRepository = postTagRepository;
         this.fileStorageService = fileStorageService;
+        this.postListRowMapper = postListRowMapper;
     }
 
     /**
-     * TODO
+     * Поиск постов с пагинацией и фильтрами по запросу.
      *
      * @param search     строка поиска
      * @param pageNumber номер страницы
      * @param pageSize   размер страницы
-     * @return
+     * @return объект фильтрованного списка постов с пагинацие
      */
     @Override
     public PostListResponse findPostsWithPagination(String search, int pageNumber, int pageSize) {
-        // Валидация параметров
-        if (search == null) {
-            throw new IllegalArgumentException("Search parameter cannot be null");
-        }
-        if (pageNumber < 1) {
-            throw new IllegalArgumentException("Page number must be greater than 0");
-        }
-        if (pageSize < 1) {
-            throw new IllegalArgumentException("Page size must be greater than 0");
-        }
+        ValidationUtils.validatePaginationParams(search, pageNumber, pageSize);
 
-        // Расчет смещения
         int offset = (pageNumber - 1) * pageSize;
+        String searchPattern = "%" + search + "%";
 
         try {
-            // Запрос для подсчета
-            String countSql = """
-                    SELECT COUNT(DISTINCT p.id) 
-                    FROM post p
-                    LEFT JOIN post_tag pt ON p.id = pt.post_id
-                    LEFT JOIN tag t ON pt.tag_id = t.id
-                    WHERE p.title LIKE ? 
-                       OR p.text LIKE ?
-                       OR t.name LIKE ?
-                    """;
-
             Integer totalCount = jdbcTemplate.queryForObject(
-                    countSql,
+                    PostSqlQueries.COUNT_POSTS_BY_SEARCH,
                     Integer.class,
-                    "%" + search + "%", "%" + search + "%", "%" + search + "%"
+                    searchPattern, searchPattern, searchPattern
             );
 
             if (totalCount == null || totalCount == 0) {
-                return new PostListResponse(Collections.emptyList(), false, false, 0);
+                return new PostListResponse(List.of(), false, false, 0);
             }
 
-            // Расчет пагинации
-            int lastPage = (int) Math.ceil((double) totalCount / pageSize);
-            boolean hasPrev = pageNumber > 1;
-            boolean hasNext = pageNumber < lastPage;
-
-            // Запрос для получения постов
-            String postsSql = """
-                    SELECT DISTINCT
-                        p.id, 
-                        p.title, 
-                        p.text, 
-                        p.likes_count, 
-                        p.comments_count,
-                        p.created_at
-                    FROM post p
-                    LEFT JOIN post_tag pt ON p.id = pt.post_id
-                    LEFT JOIN tag t ON pt.tag_id = t.id
-                    WHERE p.title LIKE ? 
-                       OR p.text LIKE ?
-                       OR t.name LIKE ?
-                    ORDER BY p.created_at DESC
-                    LIMIT ? OFFSET ?
-                    """;
-
-            // Получаем посты без тегов
             List<PostResponse> posts = jdbcTemplate.query(
-                    postsSql,
-                    new PostListRowMapper(),
-                    "%" + search + "%", "%" + search + "%", "%" + search + "%",
+                    PostSqlQueries.FIND_POSTS_BY_SEARCH_PAGINATED,
+                    postListRowMapper,
+                    searchPattern, searchPattern, searchPattern,
                     pageSize, offset
             );
 
-            // Заполняем теги отдельно для каждого поста
-            for (PostResponse post : posts) {
-                List<String> tags = getTagsForPost(post.getId());
-                post.setTags(tags);
-            }
+            List<PostResponse> postsWithTags = enrichPostsWithTags(posts);
+            PaginationData pagination = calculatePagination(totalCount, pageNumber, pageSize);
 
-            return new PostListResponse(posts, hasPrev, hasNext, lastPage);
+            return new PostListResponse(
+                    postsWithTags,
+                    pagination.hasPrev(),
+                    pagination.hasNext(),
+                    pagination.lastPage()
+            );
 
-        } catch (Exception e) {
-            // Детальное логирование для диагностики
-            System.err.printf("Error in findPostsWithPagination: %s \n", e);
-            System.err.printf("Search: %s, Page: %d, Size: %d \n", search, pageNumber, pageSize);
-
-            // Проверим конкретный тип исключения
-            if (e instanceof DataAccessException) {
-                System.err.printf("SQL State: %s \n", ((DataAccessException) e).getRootCause());
-            }
+        } catch (DataAccessException e) {
             throw new DataAccessException("Database error while searching posts", e) {
             };
         }
-    }
-
-    /**
-     * Получает все посты из базы данных вместе с их тегами и комментариями.
-     *
-     * <p>Выполняет сложный SQL запрос с LEFT JOIN для загрузки связанных данных:
-     * <ul>
-     *   <li>Основная информация о посте</li>
-     *   <li>Теги, связанные с постом через таблицу post_tag</li>
-     *   <li>Комментарии, относящиеся к посту</li>
-     * </ul>
-     *
-     * <p>Результаты сортируются по дате создания поста (от новых к старым),
-     * затем по имени тега и дате создания комментария.</p>
-     *
-     * @return список всех постов с заполненными данными тегов и комментариев.
-     * Если посты отсутствуют, возвращается пустой список
-     */
-    @Override
-    public List<Post> findAll() {
-        String sql = """
-                SELECT
-                    p.id as post_id, p.title, p.text, p.likes_count, p.comments_count,
-                    p.image_url, p.image_name, p.image_size, p.created_at, p.updated_at,
-                    t.id as tag_id, t.name as tag_name, t.created_at as tag_created_at,
-                    c.id as comment_id, c.text as comment_text,
-                    c.created_at as comment_created_at, c.updated_at as comment_updated_at
-                FROM post p
-                LEFT JOIN post_tag pt ON p.id = pt.post_id
-                LEFT JOIN tag t ON pt.tag_id = t.id
-                LEFT JOIN comment c ON p.id = c.post_id
-                ORDER BY p.created_at DESC, t.name, c.created_at
-                """;
-
-        return jdbcTemplate.query(sql, new PostWithTagsAndCommentsRowMapper());
     }
 
     /**
@@ -200,24 +118,11 @@ public class PostRepositoryImpl implements PostRepository {
      * @return Optional с постом если найден
      */
     @Override
-    public Optional<Post> findByIdWithFullContent(Long id) {
-        String sql = """
-                SELECT
-                    p.id as post_id, p.title, p.text, p.likes_count, p.comments_count,
-                    p.image_url, p.image_name, p.image_size, p.created_at, p.updated_at,
-                    t.id as tag_id, t.name as tag_name, t.created_at as tag_created_at,
-                    c.id as comment_id, c.text as comment_text,
-                    c.created_at as comment_created_at, c.updated_at as comment_updated_at
-                FROM post p
-                LEFT JOIN post_tag pt ON p.id = pt.post_id
-                LEFT JOIN tag t ON pt.tag_id = t.id
-                LEFT JOIN comment c ON p.id = c.post_id
-                WHERE p.id = ?
-                ORDER BY t.name, c.created_at
-                """;
+    public Optional<PostResponse> findByIdWithFullContent(Long id) {
+        ValidationUtils.validatePostId(id);
 
-        List<Post> posts = jdbcTemplate.query(sql, new PostWithTagsAndCommentsRowMapper(), id);
-        return posts.isEmpty() ? Optional.empty() : Optional.of(posts.getFirst());
+        Optional<PostResponse> post = findPostById(id);
+        return post.map(this::enrichPostWithTags);
     }
 
     /**
@@ -226,45 +131,19 @@ public class PostRepositoryImpl implements PostRepository {
      *
      * @param postRequest объект запроса с данными для создания поста, содержащий
      *                    название, текст и список тегов
-     * @return созданный объект {@link Post} с присвоенным идентификатором и обработанными тегами
+     * @return созданный объект {@link PostResponse} с присвоенным идентификатором и обработанными тегами
      * @throws IllegalStateException если исходный или сгенерированный ключ равен null
      * @throws DataAccessException   при ошибках доступа к базе данных
      */
     @Override
     @Transactional
-    public Post save(PostRequest postRequest) {
-        if (postRequest == null) {
-            throw new IllegalArgumentException("PostRequest cannot be null");
-        }
-        if (postRequest.getTitle() == null || postRequest.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("Post title cannot be null or empty");
-        }
+    public PostResponse save(PostRequest postRequest) {
+        ValidationUtils.validatePostRequest(postRequest);
 
-        final String sql = "INSERT INTO post (title, text) VALUES (?, ?)";
+        Long postId = insertPost(postRequest);
+        List<String> tagNames = processTags(postId, postRequest.tags());
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
-            ps.setString(1, postRequest.getTitle());
-            ps.setString(2, postRequest.getText());
-            return ps;
-        }, keyHolder);
-
-        Number key = keyHolder.getKey();
-        if (key == null) {
-            throw new IllegalStateException("Failed to generate primary key for new post");
-        }
-
-        Long generatedId = key.longValue();
-        Set<PostTag> postTags = processPostTags(generatedId, postRequest.getTags());
-
-        return Post.builder()
-                .id(generatedId)
-                .title(postRequest.getTitle())
-                .text(postRequest.getText())
-                .tags(postTags)
-                .build();
+        return PostResponse.forNewPost(postId, postRequest.title(), postRequest.text(), tagNames);
     }
 
     /**
@@ -274,53 +153,33 @@ public class PostRepositoryImpl implements PostRepository {
      *
      * @param postRequest объект запроса с данными для обновления поста, содержащий
      *                    идентификатор, новое название, текст и список тегов
-     * @return обновленный объект {@link Post} с актуальными данными и тегами
+     * @return обновленный объект {@link PostResponse} с актуальными данными и тегами
      * @throws IllegalArgumentException       если запрос или ID null
      * @throws EmptyResultDataAccessException если пост с указанным ID не найден
      * @throws DataAccessException            при ошибках доступа к базе данных
      */
     @Override
     @Transactional
-    public Post update(PostRequest postRequest) {
-        if (postRequest == null) {
-            throw new IllegalArgumentException("PostRequest cannot be null");
-        }
-        if (postRequest.getId() == null) {
-            throw new IllegalArgumentException("Post ID cannot be null");
+    public PostResponse update(PostRequest postRequest) {
+        ValidationUtils.validatePostRequest(postRequest);
+        ValidationUtils.validatePostId(postRequest.id());
+
+        if (!postExists(postRequest.id())) {
+            throw new EmptyResultDataAccessException("Post with id " + postRequest.id() + " not found", 1);
         }
 
-        Long id = postRequest.getId();
-        Optional<Post> existingPost = findByIdWithFullContent(id);
-        if (existingPost.isEmpty()) {
-            throw new EmptyResultDataAccessException("Post with id " + id + " not found", 1);
-        }
+        updatePostData(postRequest);
+        List<String> tagNames = processTags(postRequest.id(), postRequest.tags());
+        PostCounters counters = getPostCounters(postRequest.id());
 
-        final String sql = "UPDATE post SET title = ?, text = ?, updated_at = ? WHERE id = ?";
-        int updatedRows = jdbcTemplate.update(
-                sql,
-                postRequest.getTitle(),
-                postRequest.getText(),
-                Timestamp.valueOf(LocalDateTime.now()),
-                id
+        return new PostResponse(
+                postRequest.id(),
+                postRequest.title(),
+                postRequest.text(),
+                tagNames,
+                counters.likesCount(),
+                counters.commentsCount()
         );
-
-        if (updatedRows == 0) {
-            throw new DataAccessException("Post was concurrently modified or deleted") {
-            };
-        }
-
-        Set<PostTag> postTags = processPostTags(id, postRequest.getTags());
-        Integer likesCount = existingPost.map(Post::getLikesCount).orElse(0);
-        Integer commentsCount = existingPost.map(Post::getCommentsCount).orElse(0);
-
-        return Post.builder()
-                .id(id)
-                .title(postRequest.getTitle())
-                .text(postRequest.getText())
-                .likesCount(likesCount)
-                .commentsCount(commentsCount)
-                .tags(postTags)
-                .build();
     }
 
     /**
@@ -335,23 +194,16 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     @Transactional
     public void deleteById(Long id) {
-        String imageFileName = getImageFileName(id);
+        ValidationUtils.validatePostId(id);
 
-        final String sql = "DELETE FROM post WHERE id = ?";
-        int affectedRows = jdbcTemplate.update(sql, id);
+        String imageFileName = getImageFileName(id);
+        int affectedRows = jdbcTemplate.update(PostSqlQueries.DELETE_POST, id);
 
         if (affectedRows == 0) {
             throw new EmptyResultDataAccessException("Post with id " + id + " not found", 1);
         }
 
-        if (imageFileName != null) {
-            try {
-                fileStorageService.deleteImageFile(imageFileName);
-                fileStorageService.deletePostDirectory(id);
-            } catch (Exception e) {
-                throw new DataRetrievalFailureException("Failed to delete image file for post " + id, e);
-            }
-        }
+        deletePostFiles(id, imageFileName);
     }
 
     /**
@@ -366,21 +218,15 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     @Transactional
     public int incrementLikes(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
+        ValidationUtils.validatePostId(id);
 
-        final String updateSql = "UPDATE post SET likes_count = likes_count + 1 WHERE id = ?";
-        int updatedRows = jdbcTemplate.update(updateSql, id);
-
+        int updatedRows = jdbcTemplate.update(PostSqlQueries.INCREMENT_LIKES, id);
         if (updatedRows == 0) {
             throw new EmptyResultDataAccessException("Post with id " + id + " not found", 1);
         }
 
         Integer likesCount = jdbcTemplate.queryForObject(
-                "SELECT likes_count FROM post WHERE id = ?",
-                Integer.class,
-                id
+                PostSqlQueries.GET_LIKES_COUNT, Integer.class, id
         );
 
         if (likesCount == null) {
@@ -390,47 +236,155 @@ public class PostRepositoryImpl implements PostRepository {
         return likesCount;
     }
 
+    private Optional<PostResponse> findPostById(Long id) {
+        try {
+            PostResponse post = jdbcTemplate.queryForObject(
+                    PostSqlQueries.FIND_POST_BY_ID,
+                    postListRowMapper,
+                    id
+            );
+            return Optional.ofNullable(post);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    private PostResponse enrichPostWithTags(PostResponse post) {
+        List<String> tags = getTagsForPost(post.id());
+        return new PostResponse(
+                post.id(),
+                post.title(),
+                post.text(),
+                tags,
+                post.likesCount(),
+                post.commentsCount()
+        );
+    }
+
+    private List<PostResponse> enrichPostsWithTags(List<PostResponse> posts) {
+        return posts.stream()
+                .map(this::enrichPostWithTags)
+                .toList();
+    }
+
     /**
-     * Обрабатывает теги поста: создает или находит существующие теги и создает связи.
-     * Для новых постов создает связи, для обновления - заменяет старые теги новыми.
+     * Вставляет пост в базу данных и возвращает сгенерированный ID
      *
-     * @param postId   идентификатор поста для привязки тегов
-     * @param tagNames список имен тегов для обработки, может быть null или пустым
-     * @return набор связей {@link PostTag} между постом и тегами
-     * @throws IllegalStateException если postId null или в списке тэгов null
-     * @throws DataAccessException   при ошибках доступа к базе данных
+     * @param postRequest запрос на вставку
+     * @return сгенерированный ID
      */
-    private Set<PostTag> processPostTags(
-            Long postId,
-            List<String> tagNames) {
-        if (postId == null) {
-            throw new IllegalArgumentException("Post ID cannot be null");
-        }
-
-        if (tagNames == null || tagNames.isEmpty()) {
-            jdbcTemplate.update("DELETE FROM post_tag WHERE post_id = ?", postId);
-            return new HashSet<>();
-        }
-
-        if (tagNames.stream().anyMatch(Objects::isNull)) {
-            throw new IllegalArgumentException("Tag names list cannot contain null values");
-        }
-
-        jdbcTemplate.update("DELETE FROM post_tag WHERE post_id = ?", postId);
-
-        Set<PostTag> postTags = new HashSet<>();
+    private Long insertPost(PostRequest postRequest) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
         LocalDateTime now = LocalDateTime.now();
 
-        for (String tagName : tagNames) {
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    PostSqlQueries.INSERT_POST,
+                    new String[]{"id"}
+            );
+            ps.setString(1, postRequest.title());
+            ps.setString(2, postRequest.text());
+            ps.setInt(3, 0); // likesCount
+            ps.setInt(4, 0); // commentsCount
+            ps.setTimestamp(5, Timestamp.valueOf(now));
+            ps.setTimestamp(6, Timestamp.valueOf(now));
+            return ps;
+        }, keyHolder);
+
+        Number key = keyHolder.getKey();
+        if (key == null) {
+            throw new IllegalStateException("Failed to generate primary key for new post");
+        }
+
+        return key.longValue();
+    }
+
+    /**
+     * Обрабатывает теги поста: создает или находит существующие теги и создает связи
+     *
+     * @param postId   идентификатор поста
+     * @param tagNames список имен тегов
+     * @return список имен тегов для ответа
+     */
+    private List<String> processTags(Long postId, List<String> tagNames) {
+        jdbcTemplate.update(PostSqlQueries.DELETE_POST_TAGS, postId);
+
+        if (tagNames.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> validTagNames = tagNames.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .toList();
+
+        if (validTagNames.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> processedTags = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (String tagName : validTagNames) {
             Tag tag = tagRepository.findByName(tagName)
                     .orElseGet(() -> tagRepository.save(tagName));
 
-            PostTag postTag = new PostTag(postId, tag.getId(), now);
-            postTagRepository.save(postTag);
-            postTags.add(postTag);
+            postTagRepository.save(PostTag.builder()
+                    .postId(postId)
+                    .tagId(tag.getId())
+                    .createdAt(now)
+                    .build());
+
+            processedTags.add(tagName);
         }
 
-        return postTags;
+        return processedTags;
+    }
+
+    /**
+     * Проверяет существование поста
+     */
+    private boolean postExists(Long postId) {
+        Integer count = jdbcTemplate.queryForObject(
+                PostSqlQueries.CHECK_POST_EXISTS,
+                Integer.class,
+                postId
+        );
+        return count != null && count > 0;
+    }
+
+    /**
+     * Обновляет основные данные поста
+     */
+    private void updatePostData(PostRequest postRequest) {
+        int updatedRows = jdbcTemplate.update(
+                PostSqlQueries.UPDATE_POST,
+                postRequest.title(),
+                postRequest.text(),
+                Timestamp.valueOf(LocalDateTime.now()),
+                postRequest.id()
+        );
+
+        if (updatedRows == 0) {
+            throw new DataAccessException("Post was concurrently modified or deleted") {
+            };
+        }
+    }
+
+    private PostCounters getPostCounters(Long postId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    PostSqlQueries.FIND_POST_COUNTERS,
+                    (rs, rowNum) -> new PostCounters(
+                            rs.getInt("likes_count"),
+                            rs.getInt("comments_count")
+                    ),
+                    postId
+            );
+        } catch (Exception e) {
+            return new PostCounters(0, 0);
+        }
     }
 
     /**
@@ -438,148 +392,13 @@ public class PostRepositoryImpl implements PostRepository {
      */
     private List<String> getTagsForPost(Long postId) {
         try {
-            String tagsSql = "SELECT t.name FROM tag t JOIN post_tag pt ON t.id = pt.tag_id WHERE pt.post_id = ?";
-
             return jdbcTemplate.query(
-                    tagsSql,
+                    PostSqlQueries.GET_POST_TAGS,
                     (rs, rowNum) -> rs.getString("name"),
                     postId
             );
         } catch (Exception e) {
-            return Collections.emptyList();
-        }
-    }
-
-    /**
-     * RowMapper для маппинга результатов в PostResponse
-     */
-    private static class PostListRowMapper implements RowMapper<PostResponse> {
-
-        @Override
-        public PostResponse mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Long id = rs.getLong("id");
-            String title = rs.getString("title");
-            String fullText = rs.getString("text");
-
-            // Обрезаем текст до 128 символов если нужно
-            String truncatedText = truncateText(fullText);
-
-            Integer likesCount = rs.getInt("likes_count");
-            Integer commentsCount = rs.getInt("comments_count");
-
-            // Теги будут заполнены позже отдельным запросом
-            // В текущем запросе нет столбца "tags"
-            List<String> tags = Collections.emptyList();
-
-            return new PostResponse(id, title, truncatedText, tags, likesCount, commentsCount);
-        }
-
-        /**
-         * Обрезает текст до 128 символов и добавляет "…" если нужно
-         */
-        private String truncateText(String text) {
-            if (text == null) return "";
-            if (text.length() <= 128) return text;
-
-            return text.substring(0, 128) + "…";
-        }
-    }
-
-    /**
-     * Внутренний класс для маппинга результатов SQL запроса в объекты Post.
-     * Обрабатывает отношения "один-ко-многим" для тегов и комментариев,
-     * группируя связанные данные по идентификатору поста.</p>
-     *
-     * <p>Для оптимизации использует HashMap для отслеживания уже созданных постов
-     * и предотвращения дублирования при JOIN операциях.</p>
-     */
-    private static class PostWithTagsAndCommentsRowMapper implements RowMapper<Post> {
-
-        /**
-         * Map для хранения уже созданных постов по их идентификаторам.
-         * Используется для группировки связанных тегов и комментариев.
-         */
-        private final Map<Long, Post> postMap = new HashMap<>();
-
-        /**
-         * Преобразует текущую строку ResultSet в объект Post.
-         *
-         * <p>Метод обрабатывает следующие сценарии:
-         * <ul>
-         *   <li>Если пост с данным ID еще не создан - создает новый объект Post</li>
-         *   <li>Если тег существует и не null - добавляет PostTag к посту</li>
-         *   <li>Если комментарий существует и не null - добавляет Comment к посту</li>
-         * </ul>
-         *
-         * @param rs     ResultSet с данными из базы данных
-         * @param rowNum номер текущей строки в ResultSet
-         * @return объект Post с заполненными данными тегов и комментариев
-         * @throws SQLException в случае ошибок доступа к данным ResultSet
-         */
-        @Override
-        public Post mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Long postId = rs.getLong("post_id");
-
-            Post post = postMap.get(postId);
-            if (post == null) {
-                post = Post.builder()
-                        .id(postId)
-                        .title(rs.getString("title"))
-                        .text(rs.getString("text"))
-                        .likesCount(rs.getInt("likes_count"))
-                        .commentsCount(rs.getInt("comments_count"))
-                        .imageUrl(rs.getString("image_url"))
-                        .imageName(rs.getString("image_name"))
-                        .imageSize(rs.getObject("image_size", Integer.class))
-                        .createdAt(getLocalDateTime(rs, "created_at"))
-                        .updatedAt(getLocalDateTime(rs, "updated_at"))
-                        .tags(new HashSet<>())
-                        .comments(new HashSet<>())
-                        .build();
-                postMap.put(postId, post);
-            }
-
-            // Добавление тега, если он существует в результате JOIN
-            long tagId = rs.getLong("tag_id");
-            if (!rs.wasNull() && tagId != 0) {
-                PostTag postTag = new PostTag(
-                        postId,
-                        tagId,
-                        getLocalDateTime(rs, "tag_created_at")
-                );
-                post.getTags().add(postTag);
-            }
-
-            // Добавление комментария, если он существует в результате JOIN
-            long commentId = rs.getLong("comment_id");
-            if (!rs.wasNull() && commentId != 0) {
-                Comment comment = new Comment(
-                        commentId,
-                        postId,
-                        rs.getString("comment_text"),
-                        getLocalDateTime(rs, "comment_created_at"),
-                        getLocalDateTime(rs, "comment_updated_at")
-                );
-                post.getComments().add(comment);
-            }
-
-            return post;
-        }
-
-        /**
-         * Вспомогательный метод для преобразования Timestamp в LocalDateTime.
-         *
-         * @param rs         ResultSet для получения данных
-         * @param columnName имя колонки с временной меткой
-         * @return LocalDateTime или null, если значение в колонке null
-         * @throws SQLException в случае ошибок доступа к данным
-         */
-        private LocalDateTime getLocalDateTime(ResultSet rs, String columnName) throws SQLException {
-            Timestamp timestamp = rs.getTimestamp(columnName);
-            if (timestamp == null || rs.wasNull()) {
-                return null;
-            }
-            return timestamp.toLocalDateTime();
+            return List.of();
         }
     }
 
@@ -592,7 +411,7 @@ public class PostRepositoryImpl implements PostRepository {
     private String getImageFileName(Long postId) {
         try {
             return jdbcTemplate.queryForObject(
-                    "SELECT image_url FROM post WHERE id = ?",
+                    PostSqlQueries.GET_IMAGE_FILE_NAME,
                     String.class,
                     postId
             );
@@ -600,4 +419,32 @@ public class PostRepositoryImpl implements PostRepository {
             return null;
         }
     }
+
+    private void deletePostFiles(Long postId, String imageFileName) {
+        if (imageFileName != null) {
+            try {
+                fileStorageService.deleteImageFile(imageFileName);
+                fileStorageService.deletePostDirectory(postId);
+            } catch (Exception e) {
+                throw new DataRetrievalFailureException(
+                        "Failed to delete image file for post " + postId, e
+                );
+            }
+        }
+    }
+
+    private PaginationData calculatePagination(int totalCount, int pageNumber, int pageSize) {
+        int lastPage = (int) Math.ceil((double) totalCount / pageSize);
+        boolean hasPrev = pageNumber > 1;
+        boolean hasNext = pageNumber < lastPage;
+        return new PaginationData(hasPrev, hasNext, lastPage);
+    }
+
+    // Вспомогательные records
+    private record PostCounters(Integer likesCount, Integer commentsCount) {
+    }
+
+    private record PaginationData(boolean hasPrev, boolean hasNext, int lastPage) {
+    }
+
 }

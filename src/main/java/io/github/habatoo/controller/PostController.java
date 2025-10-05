@@ -1,7 +1,7 @@
 package io.github.habatoo.controller;
 
-import io.github.habatoo.controller.dto.PostRequest;
-import io.github.habatoo.model.Post;
+import io.github.habatoo.dto.request.PostRequest;
+import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.service.PostService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -27,19 +26,6 @@ public class PostController {
 
     public PostController(PostService postService) {
         this.postService = postService;
-    }
-
-    /**
-     * Получение всех постов.
-     *
-     * <p>Обрабатывает GET запросы по пути {@code /api/posts} и возвращает
-     * полный список всех постов в системе в формате JSON.</p>
-     *
-     * @return JSON список всех постов
-     */
-    @GetMapping("/all")
-    public List<Post> getAllPosts() {
-        return postService.getAllPosts();
     }
 
     /**
@@ -73,7 +59,7 @@ public class PostController {
      * @return ResponseEntity с постом или 404 если не найден
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Post> getPostById(
+    public ResponseEntity<PostResponse> getPostById(
             @PathVariable("id") Long id) {
         return postService.getPostById(id)
                 .map(ResponseEntity::ok)
@@ -83,7 +69,7 @@ public class PostController {
     /**
      * Создание нового поста
      *
-     * @param postRequest DTO с данными для создания поста TODO
+     * @param postRequest DTO с данными для создания поста
      * @return ResponseEntity с созданным постом в формате JSON
      */
     @PostMapping
@@ -107,7 +93,6 @@ public class PostController {
             @PathVariable("id") Long id,
             @RequestBody PostRequest postRequest
     ) {
-        postRequest.setId(id);
         return handlePostOperation(
                 () -> postService.updatePost(postRequest),
                 HttpStatus.OK,

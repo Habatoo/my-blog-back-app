@@ -1,10 +1,11 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.dto.request.CommentRequest;
+import io.github.habatoo.dto.response.CommentResponse;
 import io.github.habatoo.model.Comment;
 import io.github.habatoo.repository.CommentRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +41,7 @@ public class CommentService {
      * или пост с указанным идентификатором не существует, возвращается пустой список
      * @see CommentRepository#findByPostId(Long)
      */
-    public List<Comment> getCommentsByPostId(Long postId) {
+    public List<CommentResponse> getCommentsByPostId(Long postId) {
         return commentRepository.findByPostId(postId);
     }
 
@@ -52,7 +53,7 @@ public class CommentService {
      * @return {@code Optional} содержащий комментарий если найден и принадлежит посту,
      * иначе пустой {@code Optional}
      */
-    public Optional<Comment> getCommentByPostIdAndId(Long postId, Long commentId) {
+    public Optional<CommentResponse> getCommentByPostIdAndId(Long postId, Long commentId) {
         return commentRepository.findByPostIdAndId(postId, commentId);
     }
 
@@ -60,19 +61,11 @@ public class CommentService {
      * Создание нового комментария для указанного поста.
      * Устанавливает временные метки создания и обновления.
      *
-     * @param postId идентификатор поста для комментария
-     * @param text   текст комментария
+     * @param commentRequest асррос содержит идентификатор поста и текст комментария
      * @return созданный комментарий с присвоенным идентификатором
      */
-    public Comment createComment(Long postId, String text) {
-        Comment comment = Comment.builder()
-                .postId(postId)
-                .text(text)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
-
-        return commentRepository.save(comment);
+    public CommentResponse createComment(CommentRequest commentRequest) {
+        return commentRepository.save(commentRequest);
     }
 
     /**
@@ -85,7 +78,7 @@ public class CommentService {
      * @return Optional с обновленным комментарием если найден и обновлен,
      * иначе пустой Optional
      */
-    public Optional<Comment> updateComment(Long postId, Long commentId, String text) {
+    public Optional<CommentResponse> updateComment(Long postId, Long commentId, String text) {
         return commentRepository.updateTextAndUpdatedAt(postId, commentId, text);
     }
 

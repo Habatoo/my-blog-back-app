@@ -1,12 +1,11 @@
 package io.github.habatoo.service;
 
-import io.github.habatoo.controller.dto.PostListResponse;
-import io.github.habatoo.controller.dto.PostRequest;
-import io.github.habatoo.model.Post;
+import io.github.habatoo.dto.request.PostRequest;
+import io.github.habatoo.dto.response.PostListResponse;
+import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.repository.PostRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,7 +16,7 @@ import java.util.Optional;
  * и не содержит сложной бизнес-логики.</p>
  *
  * @see PostRepository
- * @see Post
+ * @see PostResponse
  */
 @Service
 public class PostService {
@@ -36,25 +35,10 @@ public class PostService {
      *
      * @return список постов, содержащихся в системе.
      * Если посты отсутствуют, возвращается пустой список
-     * @see PostRepository#findPostsWithPagination()
+     * @see PostRepository#findPostsWithPagination
      */
     public PostListResponse getPosts(String search, int pageNumber, int pageSize) {
         return postRepository.findPostsWithPagination(search, pageNumber, pageSize);
-    }
-
-    /**
-     * Получает все посты из системы.
-     *
-     * <p>Возвращает полный список постов, отсортированный в порядке,
-     * определенном реализацией репозитория. Обычно посты возвращаются
-     * в хронологическом порядке от новых к старым.</p>
-     *
-     * @return список всех постов, содержащихся в системе.
-     * Если посты отсутствуют, возвращается пустой список
-     * @see PostRepository#findAll()
-     */
-    public List<Post> getAllPosts() {
-        return postRepository.findAll();
     }
 
     /**
@@ -64,17 +48,17 @@ public class PostService {
      * @param id идентификатор поста
      * @return Optional с постом если найден
      */
-    public Optional<Post> getPostById(Long id) {
+    public Optional<PostResponse> getPostById(Long id) {
         return postRepository.findByIdWithFullContent(id);
     }
 
     /**
      * Создание нового поста с тегами.
      *
-     * @param postRequest DTO с данными для создания поста TODO
+     * @param postRequest DTO с данными для создания поста
      * @return DTO с созданным постом
      */
-    public Post createPost(PostRequest postRequest) {
+    public PostResponse createPost(PostRequest postRequest) {
         return postRepository.save(postRequest);
     }
 
@@ -84,7 +68,7 @@ public class PostService {
      * @param postRequest DTO с данными для обновления поста
      * @return обновленный пост
      */
-    public Post updatePost(PostRequest postRequest) {
+    public PostResponse updatePost(PostRequest postRequest) {
         return postRepository.update(postRequest);
     }
 

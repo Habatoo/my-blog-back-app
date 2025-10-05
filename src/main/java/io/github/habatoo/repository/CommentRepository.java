@@ -1,5 +1,7 @@
 package io.github.habatoo.repository;
 
+import io.github.habatoo.dto.request.CommentRequest;
+import io.github.habatoo.dto.response.CommentResponse;
 import io.github.habatoo.model.Comment;
 import io.github.habatoo.repository.impl.CommentRepositoryImpl;
 import org.springframework.data.repository.Repository;
@@ -34,7 +36,7 @@ public interface CommentRepository extends Repository<Comment, Long> {
      * {@code List}, а не {@code null}
      * @see CommentRepositoryImpl#findByPostId(Long)
      */
-    List<Comment> findByPostId(Long postId);
+    List<CommentResponse> findByPostId(Long postId);
 
     /**
      * Поиск комментария по идентификатору поста и комментария.
@@ -46,15 +48,15 @@ public interface CommentRepository extends Repository<Comment, Long> {
      * или пустой {@code Optional} если комментарий не существует
      * или не принадлежит указанному посту
      */
-    Optional<Comment> findByPostIdAndId(Long postId, Long commentId);
+    Optional<CommentResponse> findByPostIdAndId(Long postId, Long commentId);
 
     /**
      * Сохранение нового комментария.
      *
-     * @param comment объект комментария для сохранения
+     * @param commentRequest объект комментария для сохранения
      * @return сохраненный комментарий с присвоенным идентификатором
      */
-    Comment save(Comment comment);
+    CommentResponse save(CommentRequest commentRequest);
 
     /**
      * Обновление текста комментария и временной метки.
@@ -64,7 +66,7 @@ public interface CommentRepository extends Repository<Comment, Long> {
      * @param text      новый текст комментария
      * @return обновленный комментарий с присвоенным идентификатором
      */
-    Optional<Comment> updateTextAndUpdatedAt(Long postId, Long commentId, String text);
+    Optional<CommentResponse> updateTextAndUpdatedAt(Long postId, Long commentId, String text);
 
     /**
      * Удаление комментария по идентификатору.

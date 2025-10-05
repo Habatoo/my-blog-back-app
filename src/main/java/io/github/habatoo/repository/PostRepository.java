@@ -1,12 +1,12 @@
 package io.github.habatoo.repository;
 
-import io.github.habatoo.controller.dto.PostListResponse;
-import io.github.habatoo.controller.dto.PostRequest;
+import io.github.habatoo.dto.request.PostRequest;
+import io.github.habatoo.dto.response.PostListResponse;
+import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.model.Post;
 import io.github.habatoo.repository.impl.PostRepositoryImpl;
 import org.springframework.data.repository.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -33,20 +33,13 @@ public interface PostRepository extends Repository<Post, Long> {
     PostListResponse findPostsWithPagination(String search, int pageNumber, int pageSize);
 
     /**
-     * Получение всех постов с тегами и комментариями одним запросом.
-     *
-     * @return список всех постов
-     */
-    List<Post> findAll();
-
-    /**
      * Поиск поста по идентификатору с полной информацией включая теги и комментарии.
      * Возвращает полный текст поста без обрезки.
      *
      * @param id идентификатор поста для поиска
      * @return Optional с постом если найден, иначе пустой Optional
      */
-    Optional<Post> findByIdWithFullContent(Long id);
+    Optional<PostResponse> findByIdWithFullContent(Long id);
 
     /**
      * Сохранение нового поста
@@ -54,7 +47,7 @@ public interface PostRepository extends Repository<Post, Long> {
      * @param post пост для сохранения
      * @return сохраненный пост с присвоенным ID
      */
-    Post save(PostRequest post);
+    PostResponse save(PostRequest post);
 
     /**
      * Обновление существующего поста
@@ -62,7 +55,7 @@ public interface PostRepository extends Repository<Post, Long> {
      * @param postRequest обновленные данные для поста
      * @return обновленный пост
      */
-    Post update(PostRequest postRequest);
+    PostResponse update(PostRequest postRequest);
 
     /**
      * Удаляет пост по идентификатору

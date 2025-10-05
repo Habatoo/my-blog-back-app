@@ -1,7 +1,7 @@
 package io.github.habatoo.controller;
 
-import io.github.habatoo.controller.dto.CommentRequest;
-import io.github.habatoo.model.Comment;
+import io.github.habatoo.dto.request.CommentRequest;
+import io.github.habatoo.dto.response.CommentResponse;
 import io.github.habatoo.service.CommentService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -41,7 +41,7 @@ public class CommentController {
      * @return JSON список комментариев к посту
      */
     @GetMapping("/{postId}/comments")
-    public List<Comment> getCommentsByPostId(@PathVariable("postId") Long postId) {
+    public List<CommentResponse> getCommentsByPostId(@PathVariable("postId") Long postId) {
         return commentService.getCommentsByPostId(postId);
     }
 
@@ -55,7 +55,7 @@ public class CommentController {
      * или статусом 404 если комментарий не существует или не принадлежит посту
      */
     @GetMapping("/{postId}/comments/{commentId}")
-    public ResponseEntity<Comment> getCommentByPostIdAndId(
+    public ResponseEntity<CommentResponse> getCommentByPostIdAndId(
             @PathVariable("postId") Long postId,
             @PathVariable("commentId") Long commentId) {
 
@@ -78,7 +78,7 @@ public class CommentController {
             @RequestBody CommentRequest commentRequest) {
 
         return handleCommentOperation(
-                () -> commentService.createComment(postId, commentRequest.text()),
+                () -> commentService.createComment(commentRequest),
                 HttpStatus.CREATED,
                 null
         );
