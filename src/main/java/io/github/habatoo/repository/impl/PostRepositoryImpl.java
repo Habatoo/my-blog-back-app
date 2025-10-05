@@ -1,6 +1,8 @@
 package io.github.habatoo.repository.impl;
 
+import io.github.habatoo.controller.dto.PostListResponse;
 import io.github.habatoo.controller.dto.PostRequest;
+import io.github.habatoo.controller.dto.PostResponse;
 import io.github.habatoo.model.Comment;
 import io.github.habatoo.model.Post;
 import io.github.habatoo.model.PostTag;
@@ -53,6 +55,106 @@ public class PostRepositoryImpl implements PostRepository {
         this.tagRepository = tagRepository;
         this.postTagRepository = postTagRepository;
         this.fileStorageService = fileStorageService;
+    }
+
+    /**
+     * TODO
+     *
+     * @param search     строка поиска
+     * @param pageNumber номер страницы
+     * @param pageSize   размер страницы
+     * @return
+     */
+    @Override
+    public PostListResponse findPostsWithPagination(String search, int pageNumber, int pageSize) {
+        // Валидация параметров
+        if (search == null) {
+            throw new IllegalArgumentException("Search parameter cannot be null");
+        }
+        if (pageNumber < 1) {
+            throw new IllegalArgumentException("Page number must be greater than 0");
+        }
+        if (pageSize < 1) {
+            throw new IllegalArgumentException("Page size must be greater than 0");
+        }
+
+        // Расчет смещения
+        int offset = (pageNumber - 1) * pageSize;
+
+        try {
+            // Запрос для подсчета
+            String countSql = """
+                    SELECT COUNT(DISTINCT p.id) 
+                    FROM post p
+                    LEFT JOIN post_tag pt ON p.id = pt.post_id
+                    LEFT JOIN tag t ON pt.tag_id = t.id
+                    WHERE p.title LIKE ? 
+                       OR p.text LIKE ?
+                       OR t.name LIKE ?
+                    """;
+
+            Integer totalCount = jdbcTemplate.queryForObject(
+                    countSql,
+                    Integer.class,
+                    "%" + search + "%", "%" + search + "%", "%" + search + "%"
+            );
+
+            if (totalCount == null || totalCount == 0) {
+                return new PostListResponse(Collections.emptyList(), false, false, 0);
+            }
+
+            // Расчет пагинации
+            int lastPage = (int) Math.ceil((double) totalCount / pageSize);
+            boolean hasPrev = pageNumber > 1;
+            boolean hasNext = pageNumber < lastPage;
+
+            // Запрос для получения постов
+            String postsSql = """
+                    SELECT DISTINCT
+                        p.id, 
+                        p.title, 
+                        p.text, 
+                        p.likes_count, 
+                        p.comments_count,
+                        p.created_at
+                    FROM post p
+                    LEFT JOIN post_tag pt ON p.id = pt.post_id
+                    LEFT JOIN tag t ON pt.tag_id = t.id
+                    WHERE p.title LIKE ? 
+                       OR p.text LIKE ?
+                       OR t.name LIKE ?
+                    ORDER BY p.created_at DESC
+                    LIMIT ? OFFSET ?
+                    """;
+
+            // Получаем посты без тегов
+            List<PostResponse> posts = jdbcTemplate.query(
+                    postsSql,
+                    new PostListRowMapper(),
+                    "%" + search + "%", "%" + search + "%", "%" + search + "%",
+                    pageSize, offset
+            );
+
+            // Заполняем теги отдельно для каждого поста
+            for (PostResponse post : posts) {
+                List<String> tags = getTagsForPost(post.getId());
+                post.setTags(tags);
+            }
+
+            return new PostListResponse(posts, hasPrev, hasNext, lastPage);
+
+        } catch (Exception e) {
+            // Детальное логирование для диагностики
+            System.err.printf("Error in findPostsWithPagination: %s \n", e);
+            System.err.printf("Search: %s, Page: %d, Size: %d \n", search, pageNumber, pageSize);
+
+            // Проверим конкретный тип исключения
+            if (e instanceof DataAccessException) {
+                System.err.printf("SQL State: %s \n", ((DataAccessException) e).getRootCause());
+            }
+            throw new DataAccessException("Database error while searching posts", e) {
+            };
+        }
     }
 
     /**
@@ -329,6 +431,58 @@ public class PostRepositoryImpl implements PostRepository {
         }
 
         return postTags;
+    }
+
+    /**
+     * Получает теги для конкретного поста
+     */
+    private List<String> getTagsForPost(Long postId) {
+        try {
+            String tagsSql = "SELECT t.name FROM tag t JOIN post_tag pt ON t.id = pt.tag_id WHERE pt.post_id = ?";
+
+            return jdbcTemplate.query(
+                    tagsSql,
+                    (rs, rowNum) -> rs.getString("name"),
+                    postId
+            );
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * RowMapper для маппинга результатов в PostResponse
+     */
+    private static class PostListRowMapper implements RowMapper<PostResponse> {
+
+        @Override
+        public PostResponse mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Long id = rs.getLong("id");
+            String title = rs.getString("title");
+            String fullText = rs.getString("text");
+
+            // Обрезаем текст до 128 символов если нужно
+            String truncatedText = truncateText(fullText);
+
+            Integer likesCount = rs.getInt("likes_count");
+            Integer commentsCount = rs.getInt("comments_count");
+
+            // Теги будут заполнены позже отдельным запросом
+            // В текущем запросе нет столбца "tags"
+            List<String> tags = Collections.emptyList();
+
+            return new PostResponse(id, title, truncatedText, tags, likesCount, commentsCount);
+        }
+
+        /**
+         * Обрезает текст до 128 символов и добавляет "…" если нужно
+         */
+        private String truncateText(String text) {
+            if (text == null) return "";
+            if (text.length() <= 128) return text;
+
+            return text.substring(0, 128) + "…";
+        }
     }
 
     /**

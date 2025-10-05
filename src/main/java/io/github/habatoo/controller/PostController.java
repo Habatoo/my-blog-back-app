@@ -37,9 +37,32 @@ public class PostController {
      *
      * @return JSON список всех постов
      */
-    @GetMapping
+    @GetMapping("/all")
     public List<Post> getAllPosts() {
         return postService.getAllPosts();
+    }
+
+    /**
+     * Получение списка постов с пагинацией и поиском
+     *
+     * <p>Обрабатывает GET запросы по пути {@code /api/posts} с параметрами:
+     * search, pageNumber, pageSize для пагинации и поиска постов.</p>
+     *
+     * @param search     строка поиска (обязательный)
+     * @param pageNumber номер страницы (обязательный)
+     * @param pageSize   размер страницы (обязательный)
+     * @return ответ с пагинированным списком постов
+     */
+    @GetMapping
+    public ResponseEntity<?> getPosts(
+            @RequestParam("search") String search,
+            @RequestParam("pageNumber") int pageNumber,
+            @RequestParam("pageSize") int pageSize) {
+        return handlePostOperation(
+                () -> postService.getPosts(search, pageNumber, pageSize),
+                HttpStatus.OK,
+                null
+        );
     }
 
     /**

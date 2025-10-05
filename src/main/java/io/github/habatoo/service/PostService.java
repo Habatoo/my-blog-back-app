@@ -1,5 +1,6 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.controller.dto.PostListResponse;
 import io.github.habatoo.controller.dto.PostRequest;
 import io.github.habatoo.model.Post;
 import io.github.habatoo.repository.PostRepository;
@@ -25,6 +26,20 @@ public class PostService {
 
     public PostService(PostRepository postRepository) {
         this.postRepository = postRepository;
+    }
+
+    /**
+     * Получает посты из системы.
+     *
+     * <p>Возвращает список постов с пагинацией  отфильтрованных по поиску,
+     * отсортированный в порядке, определенном реализацией репозитория.</p>
+     *
+     * @return список постов, содержащихся в системе.
+     * Если посты отсутствуют, возвращается пустой список
+     * @see PostRepository#findPostsWithPagination()
+     */
+    public PostListResponse getPosts(String search, int pageNumber, int pageSize) {
+        return postRepository.findPostsWithPagination(search, pageNumber, pageSize);
     }
 
     /**

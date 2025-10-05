@@ -1,5 +1,6 @@
 package io.github.habatoo.repository;
 
+import io.github.habatoo.controller.dto.PostListResponse;
 import io.github.habatoo.controller.dto.PostRequest;
 import io.github.habatoo.model.Post;
 import io.github.habatoo.repository.impl.PostRepositoryImpl;
@@ -22,7 +23,17 @@ import java.util.Optional;
 public interface PostRepository extends Repository<Post, Long> {
 
     /**
-     * Получение всех постов с тегами и комментариями одним запросом. TODO мсправить под умный поиск
+     * Находит посты с пагинацией и поиском
+     *
+     * @param search     строка поиска
+     * @param pageNumber номер страницы
+     * @param pageSize   размер страницы
+     * @return ответ с пагинированным списком постов
+     */
+    PostListResponse findPostsWithPagination(String search, int pageNumber, int pageSize);
+
+    /**
+     * Получение всех постов с тегами и комментариями одним запросом.
      *
      * @return список всех постов
      */
