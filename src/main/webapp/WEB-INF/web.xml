@@ -20,6 +20,11 @@
       <param-value>io.github.habatoo.configuration.WebConfiguration</param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
+
+    <multipart-config>
+      <max-file-size>5242880</max-file-size> <!-- 5MB -->
+      <max-request-size>20971520</max-request-size> <!-- 20MB -->
+    </multipart-config>
   </servlet>
 
   <servlet-mapping>

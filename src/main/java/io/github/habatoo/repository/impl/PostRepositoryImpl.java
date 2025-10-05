@@ -8,7 +8,9 @@ import io.github.habatoo.model.Tag;
 import io.github.habatoo.repository.PostRepository;
 import io.github.habatoo.repository.PostTagRepository;
 import io.github.habatoo.repository.TagRepository;
+import io.github.habatoo.service.FileStorageService;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -40,14 +42,17 @@ public class PostRepositoryImpl implements PostRepository {
     private final JdbcTemplate jdbcTemplate;
     private final TagRepository tagRepository;
     private final PostTagRepository postTagRepository;
+    private final FileStorageService fileStorageService;
 
     public PostRepositoryImpl(
             JdbcTemplate jdbcTemplate,
             TagRepository tagRepository,
-            PostTagRepository postTagRepository) {
+            PostTagRepository postTagRepository,
+            FileStorageService fileStorageService) {
         this.jdbcTemplate = jdbcTemplate;
         this.tagRepository = tagRepository;
         this.postTagRepository = postTagRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     /**
@@ -218,19 +223,32 @@ public class PostRepositoryImpl implements PostRepository {
 
     /**
      * Удаляет пост по идентификатору вместе со всеми связанными данными
-     * благодаря каскадному удалению в базе данных (ON DELETE CASCADE)
+     * включая файлы изображений на диске
      *
      * @param id идентификатор поста для удаления
      * @throws EmptyResultDataAccessException если пост с указанным идентификатором не найден
+     * @throws DataRetrievalFailureException  если не удалось удалть файлы.папки изображений
      * @throws DataAccessException            при ошибках доступа к базе данных
      */
     @Override
+    @Transactional
     public void deleteById(Long id) {
+        String imageFileName = getImageFileName(id);
+
         final String sql = "DELETE FROM post WHERE id = ?";
         int affectedRows = jdbcTemplate.update(sql, id);
 
         if (affectedRows == 0) {
             throw new EmptyResultDataAccessException("Post with id " + id + " not found", 1);
+        }
+
+        if (imageFileName != null) {
+            try {
+                fileStorageService.deleteImageFile(imageFileName);
+                fileStorageService.deletePostDirectory(id);
+            } catch (Exception e) {
+                throw new DataRetrievalFailureException("Failed to delete image file for post " + id, e);
+            }
         }
     }
 
@@ -408,6 +426,24 @@ public class PostRepositoryImpl implements PostRepository {
                 return null;
             }
             return timestamp.toLocalDateTime();
+        }
+    }
+
+    /**
+     * Получает имя файла изображения для поста
+     *
+     * @param postId идентификатор поста
+     * @return имя файла или null если изображение не установлено
+     */
+    private String getImageFileName(Long postId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT image_url FROM post WHERE id = ?",
+                    String.class,
+                    postId
+            );
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         }
     }
 }
