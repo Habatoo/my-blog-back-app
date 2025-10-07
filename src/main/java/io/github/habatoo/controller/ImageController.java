@@ -2,9 +2,9 @@ package io.github.habatoo.controller;
 
 import io.github.habatoo.handler.GlobalExceptionHandler;
 import io.github.habatoo.service.ImageService;
+import io.github.habatoo.service.dto.ImageResponse;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,45 +71,11 @@ public class ImageController {
      */
     @GetMapping("/{postId}/image")
     public ResponseEntity<byte[]> getPostImage(@PathVariable("postId") Long postId) {
-        byte[] imageData = imageService.getPostImage(postId);
-
-        String contentType = determineContentType(imageData);
+        ImageResponse imageResponse = imageService.getPostImage(postId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .body(imageData);
+                .contentType(imageResponse.mediaType())
+                .body(imageResponse.data());
     }
 
-    /**
-     * Определяет Content-Type для изображения на основе его данных.
-     *
-     * <p>Анализирует массив байт изображения для определения его формата.
-     * В реальной реализации может использовать библиотеки для определения
-     * формата изображения по magic numbers.</p>
-     *
-     * @param imageData массив байт изображения
-     * @return строку с MIME-типом изображения
-     */
-    private String determineContentType(byte[] imageData) {
-        if (imageData == null || imageData.length == 0) {
-            return MediaType.APPLICATION_OCTET_STREAM_VALUE;
-        }
-
-        if (imageData.length >= 3 &&
-                imageData[0] == (byte) 0xFF &&
-                imageData[1] == (byte) 0xD8 &&
-                imageData[2] == (byte) 0xFF) {
-            return "image/jpeg";
-        }
-
-        if (imageData.length >= 4 &&
-                imageData[0] == (byte) 0x89 &&
-                imageData[1] == (byte) 0x50 &&
-                imageData[2] == (byte) 0x4E &&
-                imageData[3] == (byte) 0x47) {
-            return "image/png";
-        }
-
-        return MediaType.APPLICATION_OCTET_STREAM_VALUE;
-    }
 }

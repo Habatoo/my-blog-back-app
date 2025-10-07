@@ -1,5 +1,6 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.service.dto.ImageResponse;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,11 +25,11 @@ public interface ImageService {
      * Получает изображение поста
      *
      * @param postId идентификатор поста
-     * @return массив байт изображения
+     * @return DTO c массивом байт изображения и типом
      * @throws EmptyResultDataAccessException если пост с указанным ID не найден
      * @throws IllegalArgumentException       если у поста нет изображения
      * @throws DataAccessException            при ошибках доступа к базе данных
      */
-    byte[] getPostImage(Long postId);
+    ImageResponse getPostImage(Long postId);
 
 }
