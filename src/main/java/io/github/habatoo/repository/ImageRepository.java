@@ -67,17 +67,4 @@ public interface ImageRepository {
      */
     boolean existsPostById(Long postId);
 
-    /**
-     * Удаляет метаданные изображения для указанного поста.
-     *
-     * <p>Удаляет информацию об изображении из базы данных для указанного поста.
-     * Не удаляет сам файл изображения из файловой системы.</p>
-     *
-     * @param postId идентификатор поста для удаления метаданных изображения
-     * @return количество обновленных записей (1 при успехе, 0 если пост не найден)
-     * @throws IllegalArgumentException если postId равен null или невалиден
-     * @throws DataAccessException      при ошибках удаления из базы данных
-     */
-    @Transactional
-    int deleteImageMetadata(Long postId);
 }

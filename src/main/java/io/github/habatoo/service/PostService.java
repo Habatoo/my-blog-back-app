@@ -28,7 +28,7 @@ public interface PostService {
      *
      * @return список постов, содержащихся в системе.
      * Если посты отсутствуют, возвращается пустой список
-     * @see PostRepository#findPostsWithPagination
+     * @see PostRepository
      */
     PostListResponse getPosts(String search, int pageNumber, int pageSize);
 
@@ -72,4 +72,18 @@ public interface PostService {
      * @return обновленное количество лайков поста
      */
     int incrementLikes(Long id);
+
+    /**
+     * Увеличивает счетчик комментариев поста.
+     *
+     * @param id идентификатор поста
+     */
+    void incrementCommentsCount(Long id);
+
+    /**
+     * Уменьшает счетчик комментариев поста.
+     *
+     * @param id идентификатор поста
+     */
+    void decrementCommentsCount(Long id);
 }

@@ -57,14 +57,30 @@ public class ImageValidatorImpl implements ImageValidator {
     }
 
     /**
-     * Валидирует идентификатор поста.
-     *
-     * @param postId идентификатор поста для валидации
-     * @throws PostInvalidException если идентификатор невалиден
+     * {@inheritDoc}
      */
-    private void validatePostId(Long postId) {
+    @Override
+    public void validatePostId(Long postId) {
         if (postId == null || postId <= 0) {
             throw new PostInvalidException();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void validateUpdateParameters(Long postId, String fileName, String originalName, long size) {
+        validatePostId(postId);
+
+        if (fileName == null || fileName.trim().isEmpty()) {
+            throw new IllegalArgumentException("File name cannot be null or empty");
+        }
+        if (originalName == null || originalName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Original file name cannot be null or empty");
+        }
+        if (size < 0) {
+            throw new IllegalArgumentException("File size cannot be negative: " + size);
         }
     }
 

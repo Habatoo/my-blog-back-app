@@ -2,19 +2,17 @@ package io.github.habatoo.repository;
 
 import io.github.habatoo.dto.request.PostCreateRequest;
 import io.github.habatoo.dto.request.PostRequest;
-import io.github.habatoo.dto.response.PostListResponse;
 import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.model.Post;
 import io.github.habatoo.repository.impl.PostRepositoryImpl;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataRetrievalFailureException;
-import org.springframework.dao.EmptyResultDataAccessException;
+import io.github.habatoo.service.dto.PostCounters;
 import org.springframework.data.repository.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
- * Репозиторий для работы с постами блога.
+ * Интерфейс репозитория для работы с постами блога.
  * Определяет контракты для операций доступа к данным постов.
  *
  * <p>Интерфейс расширяет Spring Data {@link Repository} и предоставляет
@@ -24,73 +22,115 @@ import java.util.Optional;
  * @see Post
  * @see PostRepositoryImpl
  */
-public interface PostRepository extends Repository<Post, Long> {
+public interface PostRepository {
 
     /**
-     * Поиск постов с пагинацией и фильтрами по запросу.
+     * Вставляет пост в базу данных и возвращает сгенерированный ID.
      *
-     * @param search     строка поиска
-     * @param pageNumber номер страницы
-     * @param pageSize   размер страницы
-     * @return объект фильтрованного списка постов с пагинацие
+     * @param postCreateRequest запрос на создание поста
+     * @return сгенерированный идентификатор поста
      */
-    PostListResponse findPostsWithPagination(String search, int pageNumber, int pageSize);
+    Long insertPost(PostCreateRequest postCreateRequest);
 
     /**
-     * Реализация поиска поста по ID с полной информацией.
-     * Загружает пост с полным текстом, тегами и комментариями.
+     * Обновляет основные данные поста.
+     *
+     * @param postRequest запрос на обновление поста
+     */
+    void updatePostData(PostRequest postRequest);
+
+    /**
+     * Получает счетчики лайков и комментариев для поста.
+     *
+     * @param postId идентификатор поста
+     * @return объект с счетчиками
+     */
+    PostCounters getPostCounters(Long postId);
+
+    /**
+     * Получает теги для конкретного поста.
+     *
+     * @param postId идентификатор поста
+     * @return список имен тегов
+     */
+    List<String> getTagsForPost(Long postId);
+
+    /**
+     * Получает имя файла изображения для поста.
+     *
+     * @param postId идентификатор поста
+     * @return имя файла или null если изображение не установлено
+     */
+    String getImageFileName(Long postId);
+
+    /**
+     * Проверяет существование поста.
+     *
+     * @param postId идентификатор поста
+     * @return true если пост существует, false в противном случае
+     */
+    boolean postExists(Long postId);
+
+    /**
+     * Подсчитывает количество постов по поисковому запросу.
+     *
+     * @param searchPattern шаблон поиска
+     * @return количество постов
+     */
+    Integer countPostsBySearch(String searchPattern);
+
+    /**
+     * Находит посты по поисковому запросу с пагинацией.
+     *
+     * @param searchPattern шаблон поиска
+     * @param pageSize      размер страницы
+     * @param offset        смещение
+     * @return список постов
+     */
+    List<PostResponse> findPostsBySearchPaginated(String searchPattern, int pageSize, int offset);
+
+    /**
+     * Находит пост по идентификатору.
      *
      * @param id идентификатор поста
-     * @return Optional с постом если найден
+     * @return Optional с постом или empty если не найден
      */
-    Optional<PostResponse> findByIdWithFullContent(Long id);
+    Optional<PostResponse> findById(Long id);
 
     /**
-     * Сохраняет новый пост в базе данных на основе данных из запроса.
-     * Выполняет вставку основных данных поста и обрабатывает связанные теги.
+     * Получает количество лайков поста.
      *
-     * @param postCreateRequest объект запроса с данными для создания поста, содержащий
-     *                          название, текст и список тегов
-     * @return созданный объект {@link PostResponse} с присвоенным идентификатором и обработанными тегами
-     * @throws IllegalStateException если исходный или сгенерированный ключ равен null
-     * @throws DataAccessException   при ошибках доступа к базе данных
+     * @param postId идентификатор поста
+     * @return количество лайков
      */
-    PostResponse save(PostCreateRequest postCreateRequest);
+    Integer getLikesCount(Long postId);
 
     /**
-     * Обновляет существующий пост в базе данных на основе данных из запроса.
-     * Модифицирует название, текст поста и временную метку обновления,
-     * а также обрабатывает связанные теги.
+     * Увеличивает счетчик лайков.
      *
-     * @param postRequest объект запроса с данными для обновления поста, содержащий
-     *                    идентификатор, новое название, текст и список тегов
-     * @return обновленный объект {@link PostResponse} с актуальными данными и тегами
-     * @throws IllegalArgumentException       если запрос или ID null
-     * @throws EmptyResultDataAccessException если пост с указанным ID не найден
-     * @throws DataAccessException            при ошибках доступа к базе данных
+     * @param postId идентификатор поста
      */
-    PostResponse update(PostRequest postRequest);
+    void incrementLikes(Long postId);
 
     /**
-     * Удаляет пост по идентификатору вместе со всеми связанными данными
-     * включая файлы изображений на диске
+     * Увеличивает счетчик комментариев.
      *
-     * @param id идентификатор поста для удаления
-     * @throws EmptyResultDataAccessException если пост с указанным идентификатором не найден
-     * @throws DataRetrievalFailureException  если не удалось удалть файлы.папки изображений
-     * @throws DataAccessException            при ошибках доступа к базе данных
+     * @param postId идентификатор поста
      */
-    void deleteById(Long id);
+    void incrementCommentsCount(Long postId);
 
     /**
-     * Увеличивает счетчик лайков поста на 1
+     * Уменьшает счетчик комментариев.
      *
-     * @param id идентификатор поста для увеличения лайков
-     * @return обновленное количество лайков поста
-     * @throws IllegalStateException          число лайков null
-     * @throws EmptyResultDataAccessException если пост с указанным идентификатором не найден
-     * @throws DataAccessException            при ошибках доступа к базе данных
+     * @param postId идентификатор поста
      */
-    int incrementLikes(Long id);
+    void decrementCommentsCount(Long postId);
 
+    /**
+     * Удаляет пост по идентификатору.
+     *
+     * @param id идентификатор поста
+     * @return количество удаленных строк
+     */
+    int deleteById(Long id);
 }

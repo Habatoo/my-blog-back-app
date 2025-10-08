@@ -41,6 +41,7 @@ public class ImageServiceImpl implements ImageService {
     @Override
     public void updatePostImage(Long postId, MultipartFile image) {
         imageValidator.validateImageUpdate(postId, image);
+        imageValidator.validatePostId(postId);
 
         if (!imageRepository.existsPostById(postId)) {
             throw new PostNotFoundException(postId);
@@ -52,6 +53,11 @@ public class ImageServiceImpl implements ImageService {
         try {
             String newFileName = fileStorageService.saveImageFile(postId, image);
 
+            imageValidator.validateUpdateParameters(
+                    postId,
+                    newFileName,
+                    image.getOriginalFilename(),
+                    image.getSize());
             imageRepository.updateImageMetadata(
                     postId,
                     newFileName,
@@ -72,6 +78,7 @@ public class ImageServiceImpl implements ImageService {
      */
     @Override
     public ImageResponse getPostImage(Long postId) {
+        imageValidator.validatePostId(postId);
         if (!imageRepository.existsPostById(postId)) {
             throw new PostNotFoundException(postId);
         }

@@ -4,6 +4,7 @@ import io.github.habatoo.dto.request.CommentCreateRequest;
 import io.github.habatoo.dto.response.CommentResponse;
 import io.github.habatoo.model.Comment;
 import io.github.habatoo.repository.impl.CommentRepositoryImpl;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;
@@ -23,57 +24,76 @@ import java.util.Optional;
 public interface CommentRepository extends Repository<Comment, Long> {
 
     /**
-     * Находит все комментарии, принадлежащие указанному посту.
+     * Выполняет поиск всех комментариев, связанных с указанным постом.
+     * Результаты возвращаются в виде списка объектов CommentResponse.
      *
-     * <p>Метод возвращает список комментариев, отсортированный по дате создания
-     * в порядке убывания (от новых к старым).</p>
-     *
-     * @param postId идентификатор поста, для которого запрашиваются комментарии.
-     *               Должен быть не-null и соответствовать существующему посту
-     * @return список комментариев для указанного поста, отсортированный по
-     * дате создания (новые первыми). Список может быть пустым, если
-     * комментарии отсутствуют. Гарантируется, что возвращается
-     * {@code List}, а не {@code null}
-     * @see CommentRepositoryImpl#findByPostId(Long)
+     * @param postId идентификатор поста для поиска комментариев
+     * @return список комментариев для указанного поста, может быть пустым
+     * @throws DataAccessException при ошибках доступа к базе данных
      */
     List<CommentResponse> findByPostId(Long postId);
 
     /**
-     * Поиск комментария по идентификатору поста и комментария.
-     * Проверяет принадлежность комментария указанному посту.
+     * Выполняет поиск конкретного комментария по идентификаторам поста и комментария.
+     * Используется для проверки принадлежности комментария к указанному посту.
      *
-     * @param postId    идентификатор поста, к которому принадлежит комментарий
-     * @param commentId идентификатор комментария для поиска
-     * @return {@code Optional} содержащий комментарий, если найден,
-     * или пустой {@code Optional} если комментарий не существует
-     * или не принадлежит указанному посту
+     * @param postId    идентификатор поста
+     * @param commentId идентификатор комментария
+     * @return Optional с найденным комментарием или empty если не найден
+     * @throws DataAccessException при ошибках доступа к базе данных
      */
     Optional<CommentResponse> findByPostIdAndId(Long postId, Long commentId);
 
     /**
-     * Сохранение нового комментария.
+     * Сохраняет новый комментарий в базе данных и возвращает сгенерированный идентификатор.
+     * Автоматически устанавливает временные метки создания и обновления.
      *
-     * @param commentCreateRequest объект комментария для сохранения
-     * @return сохраненный комментарий с присвоенным идентификатором
+     * @param commentCreateRequest DTO с данными для создания комментария
+     * @return сгенерированный идентификатор нового комментария
+     * @throws DataAccessException   при ошибках сохранения в базу данных
+     * @throws IllegalStateException если не удалось получить сгенерированный ключ
      */
-    CommentResponse save(CommentCreateRequest commentCreateRequest);
+    Long save(CommentCreateRequest commentCreateRequest);
 
     /**
-     * Обновление текста комментария и временной метки.
+     * Обновляет текст существующего комментария и временную метку обновления.
+     * Возвращает количество обновленных записей (0 или 1).
      *
-     * @param postId    идентификатор поста для проверки принадлежности
-     * @param commentId идентификатор комментария для обновления
+     * @param commentId идентификатор обновляемого комментария
      * @param text      новый текст комментария
-     * @return обновленный комментарий с присвоенным идентификатором
+     * @return количество обновленных записей
+     * @throws DataAccessException при ошибках обновления в базе данных
      */
-    Optional<CommentResponse> updateTextAndUpdatedAt(Long postId, Long commentId, String text);
+    int updateText(Long commentId, String text);
 
     /**
-     * Удаление комментария по идентификатору.
+     * Удаляет комментарий по идентификатору.
+     * Возвращает количество удаленных записей (0 или 1).
      *
-     * @param postId    идентификатор поста для проверки принадлежности
-     * @param commentId идентификатор комментария для удаления
-     * @return true если комментарий найден и удален, false если не найден
+     * @param commentId идентификатор удаляемого комментария
+     * @return количество удаленных записей
+     * @throws DataAccessException при ошибках удаления из базы данных
      */
-    boolean deleteById(Long postId, Long commentId);
+    int deleteById(Long commentId);
+
+    /**
+     * Проверяет существование комментария с указанными идентификаторами.
+     * Используется для валидации принадлежности комментария к посту.
+     *
+     * @param commentId идентификатор комментария
+     * @param postId    идентификатор поста
+     * @return true если комментарий существует и принадлежит указанному посту, иначе false
+     * @throws DataAccessException при ошибках доступа к базе данных
+     */
+    boolean existsByIdAndPostId(Long commentId, Long postId);
+
+    /**
+     * Проверяет существование поста по идентификатору.
+     * Используется для валидации перед созданием комментариев.
+     *
+     * @param postId идентификатор поста
+     * @return true если пост существует, иначе false
+     * @throws DataAccessException при ошибках доступа к базе данных
+     */
+    boolean existsPostById(Long postId);
 }

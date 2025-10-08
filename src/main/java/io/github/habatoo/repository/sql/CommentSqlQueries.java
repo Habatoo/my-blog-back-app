@@ -41,12 +41,6 @@ public final class CommentSqlQueries {
             WHERE id = ? AND post_id = ?
             """;
 
-    public static final String UPDATE_POST_COMMENTS_COUNT = """
-            UPDATE post
-            SET comments_count = comments_count + ?, updated_at = ?
-            WHERE id = ?
-            """;
-
     // DELETE queries
-    public static final String DELETE_COMMENT = "DELETE FROM comment WHERE id = ? AND post_id = ?";
+    public static final String DELETE_COMMENT = "DELETE FROM comment WHERE id = ?";
 }
