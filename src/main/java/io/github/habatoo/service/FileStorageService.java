@@ -1,6 +1,5 @@
 package io.github.habatoo.service;
 
-import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -11,43 +10,37 @@ import java.io.IOException;
 public interface FileStorageService {
 
     /**
-     * Сохраняет файл изображения на диск
+     * Сохраняет файл изображения для указанного поста.
      *
      * @param postId идентификатор поста
-     * @param file   файл изображения
+     * @param file   файл изображения для сохранения
      * @return относительный путь к сохраненному файлу
      * @throws IOException при ошибках сохранения файла
      */
     String saveImageFile(Long postId, MultipartFile file) throws IOException;
 
     /**
-     * Загружает файл изображения с диска
+     * Загружает файл изображения по имени файла.
      *
-     * @param filename относительный путь к файлу
-     * @return ресурс с содержимым файла
+     * @param filename имя файла для загрузки
+     * @return массив байт содержимого файла
+     * @throws IOException при ошибках чтения файла
      */
-    Resource loadImageFile(String filename);
+    byte[] loadImageFile(String filename) throws IOException;
 
     /**
-     * Удаляет файл изображения с диска
+     * Удаляет файл изображения по имени файла.
      *
-     * @param filename относительный путь к файлу
+     * @param filename имя файла для удаления
+     * @throws IOException при ошибках удаления файла
      */
-    void deleteImageFile(String filename);
+    void deleteImageFile(String filename) throws IOException;
 
     /**
-     * Удаляет папку поста если она пустая
+     * Удаляет директорию поста со всем содержимым.
      *
      * @param postId идентификатор поста
      */
     void deletePostDirectory(Long postId);
-
-    /**
-     * Проверяет тип загружаемого изображения.
-     *
-     * @param image файл изображения
-     * @return true если тип изображения поддерживается
-     */
-    boolean isValidImageType(MultipartFile image);
 
 }

@@ -1,9 +1,8 @@
 package io.github.habatoo.service.impl;
 
+import io.github.habatoo.service.FileNameGenerator;
 import io.github.habatoo.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,10 +20,18 @@ import java.util.stream.Stream;
 public class FileStorageServiceImpl implements FileStorageService {
 
     private final String uploadDir;
+    private final FileNameGenerator fileNameGenerator;
+    private final PathResolverImpl pathResolver;
 
-    public FileStorageServiceImpl(@Value("${app.upload.dir:uploads/posts/}") String uploadDir,
-                                  @Value("${app.upload.auto-create-dir:true}") boolean autoCreateDir) {
+    public FileStorageServiceImpl(
+            @Value("${app.upload.dir:uploads/posts/}") String uploadDir,
+            @Value("${app.upload.auto-create-dir:true}") boolean autoCreateDir,
+            FileNameGenerator fileNameGenerator,
+            PathResolverImpl pathResolver) {
+
         this.uploadDir = uploadDir;
+        this.fileNameGenerator = fileNameGenerator;
+        this.pathResolver = pathResolver;
 
         if (autoCreateDir) {
             createUploadDirectory();
@@ -36,17 +43,10 @@ public class FileStorageServiceImpl implements FileStorageService {
      */
     @Override
     public String saveImageFile(Long postId, MultipartFile file) throws IOException {
-        Path postUploadDir = Paths.get(uploadDir + postId + "/");
-        if (!Files.exists(postUploadDir)) {
-            Files.createDirectories(postUploadDir);
-        }
-
-        String fileExtension = getFileExtension(file.getOriginalFilename());
-        String fileName = System.currentTimeMillis() + "." + fileExtension;
-        Path filePath = postUploadDir.resolve(fileName);
-
+        Path postDir = createPostDirectory(postId);
+        String fileName = fileNameGenerator.generateFileName(file.getOriginalFilename());
+        Path filePath = pathResolver.resolveFilePath(postDir, fileName);
         file.transferTo(filePath);
-
         return postId + "/" + fileName;
     }
 
@@ -54,33 +54,18 @@ public class FileStorageServiceImpl implements FileStorageService {
      * {@inheritDoc}
      */
     @Override
-    public Resource loadImageFile(String filename) {
-        try {
-            Path filePath = getPath(filename);
-
-            if (!Files.exists(filePath)) {
-                throw new IllegalArgumentException("File not found: " + filename);
-            }
-
-            byte[] content = Files.readAllBytes(filePath);
-            return new ByteArrayResource(content);
-        } catch (IOException e) {
-            throw new RuntimeException("Error reading image file: " + e.getMessage(), e);
-        }
+    public byte[] loadImageFile(String filename) throws IOException {
+        Path filePath = pathResolver.resolveFilePath(filename);
+        return Files.readAllBytes(filePath);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void deleteImageFile(String filename) {
-        try {
-            Path filePath = getPath(filename);
-
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            throw new RuntimeException("Error deleting image file: " + e.getMessage(), e);
-        }
+    public void deleteImageFile(String filename) throws IOException {
+        Path filePath = pathResolver.resolveFilePath(filename);
+        Files.deleteIfExists(filePath);
     }
 
     /**
@@ -89,7 +74,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public void deletePostDirectory(Long postId) {
         try {
-            Path postDir = Paths.get(uploadDir + postId).normalize();
+            Path postDir = Paths.get(uploadDir, postId.toString()).normalize();
 
             if (!postDir.startsWith(Paths.get(uploadDir).normalize())) {
                 throw new SecurityException("Attempt to access directory outside upload directory");
@@ -105,17 +90,18 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     /**
-     * {@inheritDoc}
+     * Создает директорию для конкретного поста.
+     *
+     * @param postId идентификатор поста
+     * @return путь к созданной директории
+     * @throws IOException если не удалось создать директорию
      */
-    @Override
-    public boolean isValidImageType(MultipartFile image) {
-        String contentType = image.getContentType();
-        return contentType != null && (
-                contentType.equals("image/jpeg") ||
-                        contentType.equals("image/png") ||
-                        contentType.equals("image/gif") ||
-                        contentType.equals("image/jpg")
-        );
+    private Path createPostDirectory(Long postId) throws IOException {
+        Path postDir = Paths.get(uploadDir, postId.toString());
+        if (!Files.exists(postDir)) {
+            Files.createDirectories(postDir);
+        }
+        return postDir;
     }
 
     /**
@@ -140,36 +126,6 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     /**
-     * Извлекает путь до файла из имени
-     *
-     * @param filename имя файла
-     * @return путь до файла
-     */
-    private Path getPath(String filename) {
-        Path path = Paths.get(uploadDir);
-        Path filePath = path.resolve(filename).normalize();
-
-        if (!filePath.startsWith(path.normalize())) {
-            throw new SecurityException("Attempt to access file outside upload directory");
-        }
-        return filePath;
-    }
-
-
-    /**
-     * Извлекает расширение файла из имени
-     *
-     * @param filename имя файла
-     * @return расширение файла
-     */
-    private String getFileExtension(String filename) {
-        if (filename == null || filename.lastIndexOf(".") == -1) {
-            return "jpg";
-        }
-        return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-    }
-
-    /**
      * Создает директорию для загрузки файлов при старте приложения
      */
     private void createUploadDirectory() {
@@ -182,5 +138,4 @@ public class FileStorageServiceImpl implements FileStorageService {
             throw new RuntimeException("Failed to create upload directory: " + uploadDir, e);
         }
     }
-
 }

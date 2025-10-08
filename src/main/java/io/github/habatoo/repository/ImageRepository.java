@@ -1,32 +1,83 @@
 package io.github.habatoo.repository;
 
+import io.github.habatoo.repository.impl.ImageRepositoryImpl;
+import io.github.habatoo.service.FileStorageService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 /**
- * Репозиторий для работы с изображениями постов
+ * Репозиторий для работы с метаданными изображений постов.
+ *
+ * <p>Предоставляет методы для доступа и управления метаданными изображений,
+ * связанных с постами в базе данных. Обеспечивает абстракцию над SQL-операциями
+ * для работы с изображениями.</p>
+ *
+ * <p>Все методы работают только с метаданными изображений (имена файлов, размеры, ссылки),
+ * сами операции с файлами изображений делегируются {@link FileStorageService}.</p>
+ *
+ * @see ImageRepositoryImpl
+ * @see FileStorageService
  */
 public interface ImageRepository {
 
     /**
-     * Обновляет изображение поста в базе данных
+     * Находит имя файла изображения для указанного поста.
      *
-     * @param postId идентификатор поста
-     * @param image  файл изображения
-     * @throws EmptyResultDataAccessException если пост с указанным ID не найден
-     * @throws IllegalArgumentException       если файл изображения невалиден
-     * @throws DataAccessException            при ошибках доступа к базе данныхх
+     * <p>Выполняет поиск в базе данных имени файла изображения, связанного с постом.
+     * Если у поста нет изображения, возвращает пустой Optional.</p>
+     *
+     * @param postId идентификатор поста для поиска изображения
+     * @return Optional с именем файла изображения, если найдено, иначе empty
+     * @throws IllegalArgumentException если postId равен null или невалиден
+     * @throws DataAccessException      при ошибках доступа к базе данных
      */
-    void updatePostImage(Long postId, MultipartFile image);
+    Optional<String> findImageFileNameByPostId(Long postId);
 
     /**
-     * Получает изображение поста
+     * Обновляет метаданные изображения для указанного поста.
      *
-     * @param postId идентификатор поста
-     * @return массив байт изображения
-     * @throws EmptyResultDataAccessException если пост с указанным ID не найден или нет изображения
-     * @throws DataAccessException            при ошибках доступа к базе данных
+     * <p>Обновляет информацию об изображении в базе данных, включая имя файла,
+     * оригинальное имя и размер. Выполняется в транзакции для обеспечения
+     * целостности данных.</p>
+     *
+     * @param postId       идентификатор поста для обновления
+     * @param fileName     имя сохраненного файла изображения
+     * @param originalName оригинальное имя файла от пользователя
+     * @param size         размер файла в байтах
+     * @throws IllegalArgumentException       если любой из параметров невалиден
+     * @throws EmptyResultDataAccessException если пост с указанным ID не найден
+     * @throws DataAccessException            при ошибках обновления в базе данных
      */
-    byte[] getPostImage(Long postId);
+    @Transactional
+    void updateImageMetadata(Long postId, String fileName, String originalName, long size);
+
+    /**
+     * Проверяет существование поста по идентификатору.
+     *
+     * <p>Выполняет проверку наличия поста в базе данных по указанному идентификатору.
+     * Используется для валидации перед операциями с изображениями.</p>
+     *
+     * @param postId идентификатор поста для проверки
+     * @return true если пост существует, false в противном случае
+     * @throws IllegalArgumentException если postId равен null или невалиден
+     * @throws DataAccessException      при ошибках доступа к базе данных
+     */
+    boolean existsPostById(Long postId);
+
+    /**
+     * Удаляет метаданные изображения для указанного поста.
+     *
+     * <p>Удаляет информацию об изображении из базы данных для указанного поста.
+     * Не удаляет сам файл изображения из файловой системы.</p>
+     *
+     * @param postId идентификатор поста для удаления метаданных изображения
+     * @return количество обновленных записей (1 при успехе, 0 если пост не найден)
+     * @throws IllegalArgumentException если postId равен null или невалиден
+     * @throws DataAccessException      при ошибках удаления из базы данных
+     */
+    @Transactional
+    int deleteImageMetadata(Long postId);
 }

@@ -1,30 +1,45 @@
 package io.github.habatoo.repository.impl;
 
 import io.github.habatoo.repository.ImageRepository;
-import io.github.habatoo.repository.impl.util.ImageOperationHandler;
-import io.github.habatoo.repository.impl.util.ImageValidationUtils;
-import io.github.habatoo.service.FileStorageService;
-import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.util.Optional;
 
 /**
- * Реализация репозитория для работы с изображениями постов.
- * Обеспечивает обновление и получение изображений, связанных с постами.
+ * Реализация репозитория для работы с метаданными изображений постов.
+ *
+ * <p>Использует JdbcTemplate для выполнения SQL-запросов к базе данных.
+ * Предоставляет доступ к метаданным изображений, хранящимся в таблице постов.</p>
  */
 @Repository
 public class ImageRepositoryImpl implements ImageRepository {
 
-    private final ImageOperationHandler imageOperationHandler;
-    private final FileStorageService fileStorageService;
+    private final JdbcTemplate jdbcTemplate;
 
-    public ImageRepositoryImpl(JdbcTemplate jdbcTemplate, FileStorageService fileStorageService) {
-        this.imageOperationHandler = new ImageOperationHandler(jdbcTemplate, fileStorageService);
-        this.fileStorageService = fileStorageService;
+    public ImageRepositoryImpl(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<String> findImageFileNameByPostId(Long postId) {
+        validatePostId(postId);
+
+        try {
+            String fileName = jdbcTemplate.queryForObject(
+                    "SELECT image_url FROM post WHERE id = ?",
+                    String.class,
+                    postId
+            );
+            return Optional.ofNullable(fileName);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
     }
 
     /**
@@ -32,23 +47,19 @@ public class ImageRepositoryImpl implements ImageRepository {
      */
     @Override
     @Transactional
-    public void updatePostImage(Long postId, MultipartFile image) {
-        ImageValidationUtils.validateImageUpdateParams(postId, image);
+    public void updateImageMetadata(Long postId, String fileName, String originalName, long size) {
+        validateUpdateParameters(postId, fileName, originalName, size);
 
-        if (!fileStorageService.isValidImageType(image)) {
-            throw new IllegalArgumentException("Invalid image type. Supported types: JPEG, PNG, GIF");
-        }
+        int updatedRows = jdbcTemplate.update(
+                "UPDATE post SET image_name = ?, image_size = ?, image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                originalName,
+                size,
+                fileName,
+                postId
+        );
 
-        imageOperationHandler.validatePostExists(postId);
-
-        try {
-            imageOperationHandler.handleImageUpdate(postId, image);
-        } catch (IOException e) {
-            throw new DataAccessException("Error saving image file: " + e.getMessage(), e) {
-            };
-        } catch (Exception e) {
-            throw new DataAccessException("Error updating post image: " + e.getMessage(), e) {
-            };
+        if (updatedRows == 0) {
+            throw new EmptyResultDataAccessException("Post not found with id: " + postId, 1);
         }
     }
 
@@ -56,16 +67,63 @@ public class ImageRepositoryImpl implements ImageRepository {
      * {@inheritDoc}
      */
     @Override
-    public byte[] getPostImage(Long postId) {
-        ImageValidationUtils.validateImageRetrievalParams(postId);
+    public boolean existsPostById(Long postId) {
+        validatePostId(postId);
 
-        try {
-            return imageOperationHandler.handleImageRetrieval(postId);
-        } catch (IOException e) {
-            throw new DataAccessException("Error reading image file: " + e.getMessage(), e) {
-            };
-        }
-
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM post WHERE id = ?",
+                Integer.class,
+                postId
+        );
+        return count != null && count > 0;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public int deleteImageMetadata(Long postId) {
+        validatePostId(postId);
+
+        return jdbcTemplate.update(
+                "UPDATE post SET image_name = NULL, image_size = NULL, image_url = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                postId
+        );
+    }
+
+    /**
+     * Валидирует идентификатор поста.
+     *
+     * @param postId идентификатор поста для валидации
+     * @throws IllegalArgumentException если идентификатор невалиден
+     */
+    private void validatePostId(Long postId) {
+        if (postId == null || postId <= 0) {
+            throw new IllegalArgumentException("Post ID must be positive: " + postId);
+        }
+    }
+
+    /**
+     * Валидирует параметры для обновления метаданных изображения.
+     *
+     * @param postId       идентификатор поста
+     * @param fileName     имя файла
+     * @param originalName оригинальное имя
+     * @param size         размер файла
+     * @throws IllegalArgumentException если любой параметр невалиден
+     */
+    private void validateUpdateParameters(Long postId, String fileName, String originalName, long size) {
+        validatePostId(postId);
+
+        if (fileName == null || fileName.trim().isEmpty()) {
+            throw new IllegalArgumentException("File name cannot be null or empty");
+        }
+        if (originalName == null || originalName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Original file name cannot be null or empty");
+        }
+        if (size < 0) {
+            throw new IllegalArgumentException("File size cannot be negative: " + size);
+        }
+    }
 }
