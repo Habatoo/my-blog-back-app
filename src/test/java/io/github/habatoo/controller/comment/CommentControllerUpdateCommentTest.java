@@ -10,8 +10,6 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
@@ -29,7 +27,7 @@ class CommentControllerUpdateCommentTest extends CommentControllerTestBase {
         CommentResponse expectedResponse = createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, UPDATED_COMMENT_TEXT);
 
         when(commentService.updateComment(VALID_POST_ID, VALID_COMMENT_ID, UPDATED_COMMENT_TEXT))
-                .thenReturn(Optional.of(expectedResponse));
+                .thenReturn(expectedResponse);
 
         ResponseEntity<CommentResponse> response = commentController.updateComment(
                 VALID_POST_ID, VALID_COMMENT_ID, updateRequest);
@@ -45,7 +43,7 @@ class CommentControllerUpdateCommentTest extends CommentControllerTestBase {
         CommentRequest updateRequest = createCommentRequest(NON_EXISTENT_COMMENT_ID, UPDATED_COMMENT_TEXT, VALID_POST_ID);
 
         when(commentService.updateComment(VALID_POST_ID, NON_EXISTENT_COMMENT_ID, UPDATED_COMMENT_TEXT))
-                .thenReturn(Optional.empty());
+                .thenThrow(new EmptyResultDataAccessException("Comment not found", 1));
 
         assertThrows(EmptyResultDataAccessException.class, () ->
                 commentController.updateComment(VALID_POST_ID, NON_EXISTENT_COMMENT_ID, updateRequest));
@@ -56,17 +54,17 @@ class CommentControllerUpdateCommentTest extends CommentControllerTestBase {
     @DisplayName("Должен корректно обновлять комментарии с различными текстами")
     @ParameterizedTest
     @CsvSource({
-            "1, 1, 'Новый текст 1'",
-            "2, 5, 'Обновленный комментарий'",
-            "10, 20, 'Еще один текст'",
-            "100, 200, 'Финальный вариант текста'"
+            "1, 1, Новый текст 1",
+            "2, 5, Обновленный комментарий",
+            "10, 20, Еще один текст",
+            "100, 200, Финальный вариант текста"
     })
     void shouldUpdateCommentsWithDifferentTexts(Long postId, Long commentId, String newText) {
         CommentRequest updateRequest = createCommentRequest(commentId, newText, postId);
         CommentResponse expectedResponse = createCommentResponse(commentId, postId, newText);
 
         when(commentService.updateComment(postId, commentId, newText))
-                .thenReturn(Optional.of(expectedResponse));
+                .thenReturn(expectedResponse);
 
         ResponseEntity<CommentResponse> response = commentController.updateComment(postId, commentId, updateRequest);
 

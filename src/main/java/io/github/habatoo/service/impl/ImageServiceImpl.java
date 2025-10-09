@@ -1,8 +1,5 @@
 package io.github.habatoo.service.impl;
 
-import io.github.habatoo.exception.image.ImageNotFoundException;
-import io.github.habatoo.exception.image.ImageStorageException;
-import io.github.habatoo.exception.post.PostNotFoundException;
 import io.github.habatoo.repository.ImageRepository;
 import io.github.habatoo.service.FileStorageService;
 import io.github.habatoo.service.ImageService;
@@ -44,7 +41,7 @@ public class ImageServiceImpl implements ImageService {
         imageValidator.validatePostId(postId);
 
         if (!imageRepository.existsPostById(postId)) {
-            throw new PostNotFoundException(postId);
+            throw new IllegalStateException();
         }
 
         String oldFileName = imageRepository.findImageFileNameByPostId(postId)
@@ -69,7 +66,7 @@ public class ImageServiceImpl implements ImageService {
             }
 
         } catch (IOException e) {
-            throw new ImageStorageException("Failed to save image", e);
+            throw new IllegalStateException("Failed to save image", e);
         }
     }
 
@@ -80,11 +77,11 @@ public class ImageServiceImpl implements ImageService {
     public ImageResponse getPostImage(Long postId) {
         imageValidator.validatePostId(postId);
         if (!imageRepository.existsPostById(postId)) {
-            throw new PostNotFoundException(postId);
+            throw new IllegalStateException();
         }
 
         String fileName = imageRepository.findImageFileNameByPostId(postId)
-                .orElseThrow(() -> new ImageNotFoundException(postId));
+                .orElseThrow(IllegalStateException::new);
 
         try {
             byte[] imageData = fileStorageService.loadImageFile(fileName);
@@ -94,7 +91,7 @@ public class ImageServiceImpl implements ImageService {
             return new ImageResponse(imageData, mediaType);
 
         } catch (IOException e) {
-            throw new ImageStorageException("Failed to load image", e);
+            throw new IllegalStateException("Failed to load image", e);
         }
     }
 

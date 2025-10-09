@@ -5,11 +5,15 @@ import io.github.habatoo.dto.request.PostRequest;
 import io.github.habatoo.dto.response.PostListResponse;
 import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.repository.PostRepository;
-import io.github.habatoo.service.*;
+import io.github.habatoo.service.PostService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Сервис для работы с постами блога.
@@ -22,145 +26,140 @@ import java.util.Optional;
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
-    private final PostBusinessService postBusinessService;
-    private final PostStatisticsService statisticsService;
-    private final PaginationService paginationService;
-    private final PostValidationService validationService;
 
-    /**
-     * Конструктор сервиса постов.
-     *
-     * @param postRepository        репозиторий постов
-     * @param postBusinessService   сервис бизнес-операций
-     * @param statisticsService     сервис статистики
-     * @param paginationService     сервис пагинации
-     * @param validationService     сервис валидации
-     */
-    public PostServiceImpl(PostRepository postRepository,
-                           PostBusinessService postBusinessService,
-                           PostStatisticsService statisticsService,
-                           PaginationService paginationService,
-                           PostValidationService validationService) {
+    private final Map<Long, PostResponse> postCache = new ConcurrentHashMap<>();
+
+    public PostServiceImpl(PostRepository postRepository) {
         this.postRepository = postRepository;
-        this.postBusinessService = postBusinessService;
-        this.statisticsService = statisticsService;
-        this.paginationService = paginationService;
-        this.validationService = validationService;
+        initCache();
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @PostConstruct
+    public void initCache() {
+        List<PostResponse> allPosts = postRepository.findAllPosts();
+        postCache.clear();
+        allPosts.forEach(post -> postCache.put(post.id(), post));
+    }
+
     @Override
-    public PostListResponse getPosts(String search, int pageNumber, int pageSize) {
-        validationService.validatePaginationParams(search, pageNumber, pageSize);
+    public synchronized PostListResponse getPosts(String search, int pageNumber, int pageSize) {
+        List<PostResponse> filtered = postCache.values().stream()
+                .filter(post -> post.title().contains(search) || post.text().contains(search))
+                .sorted(Comparator.comparing(PostResponse::id))
+                .toList();
 
-        int offset = (pageNumber - 1) * pageSize;
+        int totalCount = filtered.size();
 
-        Integer totalCount = postRepository.countPostsBySearch(search);
+        int fromIndex = Math.min((pageNumber - 1) * pageSize, totalCount);
+        int toIndex = Math.min(fromIndex + pageSize, totalCount);
 
-        if (totalCount == null || totalCount == 0) {
-            return new PostListResponse(List.of(), false, false, 0);
-        }
+        List<PostResponse> page = filtered.subList(fromIndex, toIndex);
 
-        List<PostResponse> posts = postRepository.findPostsBySearchPaginated(search, pageSize, offset);
-
-        List<PostResponse> postsWithTags = enrichPostsWithTags(posts);
-
-        return paginationService.createPostListResponse(
-                postsWithTags, totalCount, pageNumber, pageSize);
+        return new PostListResponse(page, fromIndex > 0, toIndex < totalCount, totalCount);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<PostResponse> getPostById(Long id) {
-        validationService.validatePostId(id);
-
-        Optional<PostResponse> post = postRepository.findById(id);
-        return post.map(this::enrichWithTags);
+        return Optional.ofNullable(postCache.get(id));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public PostResponse createPost(PostCreateRequest postCreateRequest) {
-        return postBusinessService.createPostWithTags(postCreateRequest);
+    public synchronized PostResponse createPost(PostCreateRequest postCreateRequest) {
+        try {
+            PostResponse createdPost = postRepository.createPost(postCreateRequest);
+            postCache.put(createdPost.id(), createdPost);
+            return createdPost;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create post", e);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     */
+
     @Override
-    public PostResponse updatePost(PostRequest postRequest) {
-        return postBusinessService.updatePostWithTags(postRequest);
+    public synchronized PostResponse updatePost(PostRequest postRequest) {
+        try {
+            PostResponse updatedPost = postRepository.updatePost(postRequest);
+            postCache.put(updatedPost.id(), updatedPost);
+            return updatedPost;
+        } catch (Exception e) {
+            throw new IllegalStateException("Post not found or concurrently modified with id " + postRequest.id(), e);
+        }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public void deletePost(Long id) {
-        postBusinessService.deletePostWithCleanup(id);
+    public synchronized void deletePost(Long id) {
+        postRepository.deletePost(id);
+        postCache.remove(id);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public int incrementLikes(Long id) {
-        return statisticsService.incrementLikes(id);
+    public synchronized int incrementLikes(Long id) {
+        postRepository.incrementLikes(id);
+        PostResponse post = postCache.get(id);
+        if (post != null) {
+            int updatedLikes = post.likesCount() + 1;
+            PostResponse updatedPost = new PostResponse(
+                    post.id(),
+                    post.title(),
+                    post.text(),
+                    post.tags(),
+                    updatedLikes,
+                    post.commentsCount()
+            );
+            postCache.put(id, updatedPost);
+            return updatedLikes;
+        } else {
+            throw new IllegalStateException("Post not found with id " + id);
+        }
     }
 
-    /**
-     * Увеличивает счетчик комментариев поста.
-     *
-     * @param id идентификатор поста
-     */
     @Override
-    public void incrementCommentsCount(Long id) {
-        statisticsService.incrementCommentsCount(id);
+    public synchronized void incrementCommentsCount(Long id) {
+        try {
+            postRepository.incrementCommentsCount(id);
+            PostResponse post = postCache.get(id);
+            if (post != null) {
+                int updatedCount = post.commentsCount() + 1;
+                PostResponse updatedPost = new PostResponse(
+                        post.id(),
+                        post.title(),
+                        post.text(),
+                        post.tags(),
+                        post.likesCount(),
+                        updatedCount
+                );
+                postCache.put(id, updatedPost);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to increment comments count for post id " + id, e);
+        }
     }
 
-    /**
-     * Уменьшает счетчик комментариев поста.
-     *
-     * @param id идентификатор поста
-     */
     @Override
-    public void decrementCommentsCount(Long id) {
-        statisticsService.decrementCommentsCount(id);
+    public synchronized void decrementCommentsCount(Long id) {
+        try {
+            postRepository.decrementCommentsCount(id);
+            PostResponse post = postCache.get(id);
+            if (post != null) {
+                int updatedCount = Math.max(0, post.commentsCount() - 1);
+                PostResponse updatedPost = new PostResponse(
+                        post.id(),
+                        post.title(),
+                        post.text(),
+                        post.tags(),
+                        post.likesCount(),
+                        updatedCount
+                );
+                postCache.put(id, updatedPost);
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to decrement comments count for post id " + id, e);
+        }
     }
 
-    /**
-     * Обогащает пост тегами.
-     *
-     * @param post пост для обогащения
-     * @return пост с тегами
-     */
-    private PostResponse enrichWithTags(PostResponse post) {
-        List<String> tags = postRepository.getTagsForPost(post.id());
-        return new PostResponse(
-                post.id(),
-                post.title(),
-                post.text(),
-                tags,
-                post.likesCount(),
-                post.commentsCount()
-        );
+    @Override
+    public boolean postExists(Long postId) {
+        return postCache.containsKey(postId);
     }
 
-    /**
-     * Обогащает список постов тегами.
-     *
-     * @param posts список постов для обогащения
-     * @return список постов с тегами
-     */
-    private List<PostResponse> enrichPostsWithTags(List<PostResponse> posts) {
-        return posts.stream()
-                .map(this::enrichWithTags)
-                .toList();
-    }
 }

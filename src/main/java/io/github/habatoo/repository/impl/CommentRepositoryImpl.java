@@ -5,17 +5,12 @@ import io.github.habatoo.dto.response.CommentResponse;
 import io.github.habatoo.repository.CommentRepository;
 import io.github.habatoo.repository.mapper.CommentRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-
-import static io.github.habatoo.repository.sql.CommentSqlQueries.*;
 
 /**
  * Реализация репозитория для работы с комментариями блога.
@@ -31,6 +26,36 @@ public class CommentRepositoryImpl implements CommentRepository {
     private final JdbcTemplate jdbcTemplate;
     private final CommentRowMapper commentRowMapper;
 
+    private static final String FIND_BY_POST_ID = """
+            SELECT id, text, post_id
+            FROM comment
+            WHERE post_id = ?
+            ORDER BY created_at ASC
+            """;
+
+    private static final String FIND_BY_POST_ID_AND_ID = """
+            SELECT id, text, post_id
+            FROM comment
+            WHERE post_id = ? AND id = ?
+            """;
+
+    private static final String INSERT_COMMENT = """
+            INSERT INTO comment (post_id, text, created_at, updated_at)
+            VALUES (?, ?, ?, ?)
+            RETURNING id, text, post_id
+            """;
+
+    private static final String UPDATE_COMMENT_TEXT = """
+            UPDATE comment
+            SET text = ?, updated_at = ?
+            WHERE id = ?
+            RETURNING id, text, post_id
+            """;
+
+    private static final String DELETE_COMMENT = """
+            DELETE FROM comment WHERE id = ?
+            """;
+
     public CommentRepositoryImpl(
             JdbcTemplate jdbcTemplate,
             CommentRowMapper commentRowMapper) {
@@ -38,81 +63,52 @@ public class CommentRepositoryImpl implements CommentRepository {
         this.commentRowMapper = commentRowMapper;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<CommentResponse> findByPostId(Long postId) {
         return jdbcTemplate.query(FIND_BY_POST_ID, commentRowMapper, postId);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<CommentResponse> findByPostIdAndId(Long postId, Long commentId) {
-        List<CommentResponse> comments = jdbcTemplate.query(
-                FIND_BY_POST_ID_AND_ID,
-                commentRowMapper,
-                postId,
-                commentId
-        );
+        List<CommentResponse> comments = jdbcTemplate.query(FIND_BY_POST_ID_AND_ID, commentRowMapper, postId, commentId);
         return comments.stream().findFirst();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public Long save(CommentCreateRequest commentCreateRequest) {
-        Long postId = commentCreateRequest.postId();
-        String text = commentCreateRequest.text();
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+    public CommentResponse save(CommentCreateRequest commentCreateRequest) {
+        LocalDateTime now = LocalDateTime.now();
 
-        jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(INSERT_COMMENT, new String[]{"id"});
-            ps.setLong(1, postId);
-            ps.setString(2, text);
-            LocalDateTime now = LocalDateTime.now();
-            ps.setTimestamp(3, Timestamp.valueOf(now));
-            ps.setTimestamp(4, Timestamp.valueOf(now));
-            return ps;
-        }, keyHolder);
-
-        return keyHolder.getKey().longValue();
+        return jdbcTemplate.queryForObject(
+                INSERT_COMMENT,
+                (rs, rowNum) -> new CommentResponse(
+                        rs.getLong("id"),
+                        rs.getString("text"),
+                        rs.getLong("post_id")
+                ),
+                commentCreateRequest.postId(),
+                commentCreateRequest.text(),
+                Timestamp.valueOf(now),
+                Timestamp.valueOf(now)
+        );
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public int updateText(Long commentId, String text) {
-        return jdbcTemplate.update(UPDATE_COMMENT_TEXT, text, LocalDateTime.now(), commentId);
+    public CommentResponse updateText(Long commentId, String text) {
+        return jdbcTemplate.queryForObject(
+                UPDATE_COMMENT_TEXT,
+                (rs, rowNum) -> new CommentResponse(
+                        rs.getLong("id"),
+                        rs.getString("text"),
+                        rs.getLong("post_id")
+                ),
+                text,
+                Timestamp.valueOf(LocalDateTime.now()),
+                commentId
+        );
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int deleteById(Long commentId) {
         return jdbcTemplate.update(DELETE_COMMENT, commentId);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean existsByIdAndPostId(Long commentId, Long postId) {
-        Integer count = jdbcTemplate.queryForObject(COUNT_COMMENT_EXISTS, Integer.class, commentId, postId);
-        return count != null && count > 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean existsPostById(Long postId) {
-        Integer count = jdbcTemplate.queryForObject(COUNT_POST_EXISTS, Integer.class, postId);
-        return count != null && count > 0;
     }
 }

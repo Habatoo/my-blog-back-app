@@ -9,6 +9,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
@@ -57,16 +58,32 @@ public class DataSourceConfiguration {
     }
 
     /**
-     * Метод наполнения БД после инициализации контекста.
-     *
-     * @param event Событие инициализации контекста
+     * Инициализация схемы БД до создания бинов, чтобы таблицы были доступны.
      */
-    @EventListener
-    public void populate(ContextRefreshedEvent event) {
-        DataSource dataSource = event.getApplicationContext().getBean(DataSource.class);
+    @Bean
+    public DataSourceInitializer dataSourceInitializer(DataSource dataSource) {
+        ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator();
+        databasePopulator.addScript(new ClassPathResource("schema.sql"));
+        databasePopulator.setContinueOnError(false);
 
-        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
-        populator.addScript(new ClassPathResource("schema.sql"));
-        populator.execute(dataSource);
+        DataSourceInitializer initializer = new DataSourceInitializer();
+        initializer.setDataSource(dataSource);
+        initializer.setDatabasePopulator(databasePopulator);
+        initializer.setEnabled(true);
+        return initializer;
     }
+
+//    /**
+//     * Метод наполнения БД после инициализации контекста.
+//     *
+//     * @param event Событие инициализации контекста
+//     */
+//    @EventListener
+//    public void populate(ContextRefreshedEvent event) {
+//        DataSource dataSource = event.getApplicationContext().getBean(DataSource.class);
+//
+//        ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
+//        populator.addScript(new ClassPathResource("schema.sql"));
+//        populator.execute(dataSource);
+//    }
 }

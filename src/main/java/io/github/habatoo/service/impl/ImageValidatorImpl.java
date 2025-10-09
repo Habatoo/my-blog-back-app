@@ -1,8 +1,5 @@
 package io.github.habatoo.service.impl;
 
-import io.github.habatoo.exception.image.InvalidImageException;
-import io.github.habatoo.exception.image.InvalidImageTypeException;
-import io.github.habatoo.exception.post.PostInvalidException;
 import io.github.habatoo.service.ImageValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -62,7 +59,7 @@ public class ImageValidatorImpl implements ImageValidator {
     @Override
     public void validatePostId(Long postId) {
         if (postId == null || postId <= 0) {
-            throw new PostInvalidException();
+            throw new IllegalStateException();
         }
     }
 
@@ -88,17 +85,17 @@ public class ImageValidatorImpl implements ImageValidator {
      * Валидирует базовые параметры файла изображения.
      *
      * @param image файл изображения для валидации
-     * @throws InvalidImageException если файл невалиден
+     * @throws IllegalStateException если файл невалиден
      */
     private void validateImageFile(MultipartFile image) {
         if (image == null) {
-            throw new InvalidImageException("Image file cannot be null");
+            throw new IllegalStateException("Image file cannot be null");
         }
         if (image.isEmpty()) {
-            throw new InvalidImageException("Image file cannot be empty");
+            throw new IllegalStateException("Image file cannot be empty");
         }
         if (image.getOriginalFilename() == null || image.getOriginalFilename().trim().isEmpty()) {
-            throw new InvalidImageException("Image file name cannot be empty");
+            throw new IllegalStateException("Image file name cannot be empty");
         }
     }
 
@@ -106,11 +103,11 @@ public class ImageValidatorImpl implements ImageValidator {
      * Валидирует MIME-тип изображения.
      *
      * @param image файл изображения для проверки типа
-     * @throws InvalidImageTypeException если тип изображения не поддерживается
+     * @throws IllegalStateException если тип изображения не поддерживается
      */
     private void validateImageType(MultipartFile image) {
         if (!isValidImageType(image)) {
-            throw new InvalidImageTypeException(
+            throw new IllegalStateException(
                     String.format("Unsupported image type. Allowed types: %s", allowedContentTypes)
             );
         }

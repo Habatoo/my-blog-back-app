@@ -123,8 +123,7 @@ public class CommentController {
             @PathVariable("commentId") Long commentId,
             @RequestBody CommentRequest commentRequest) {
 
-        CommentResponse result = commentService.updateComment(postId, commentId, commentRequest.text())
-                .orElseThrow(() -> new EmptyResultDataAccessException("Comment not found", 1));
+        CommentResponse result = commentService.updateComment(postId, commentId, commentRequest.text());
         return ResponseEntity.ok(result);
     }
 
@@ -147,10 +146,7 @@ public class CommentController {
             @PathVariable("postId") Long postId,
             @PathVariable("commentId") Long commentId) {
 
-        boolean deleted = commentService.deleteComment(postId, commentId);
-        if (!deleted) {
-            throw new EmptyResultDataAccessException("Comment not found", 1);
-        }
+        commentService.deleteComment(postId, commentId);
         return ResponseEntity.ok().build();
     }
 }

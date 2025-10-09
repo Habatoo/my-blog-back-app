@@ -17,5 +17,5 @@ public record PostCreateRequest(
         String title,
         String text,
         List<String> tags
-) implements PostRequestValidation {
+) {
 }

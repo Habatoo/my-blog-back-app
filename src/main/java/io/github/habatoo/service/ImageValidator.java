@@ -1,6 +1,5 @@
 package io.github.habatoo.service;
 
-import io.github.habatoo.exception.post.PostInvalidException;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -37,7 +36,7 @@ public interface ImageValidator {
      * Валидирует идентификатор поста.
      *
      * @param postId идентификатор поста для валидации
-     * @throws PostInvalidException если идентификатор невалиден
+     * @throws IllegalStateException если идентификатор невалиден
      */
     void validatePostId(Long postId);
 

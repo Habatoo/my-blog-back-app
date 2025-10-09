@@ -1,6 +1,5 @@
 package io.github.habatoo.service.impl;
 
-import io.github.habatoo.exception.image.InvalidImageException;
 import io.github.habatoo.service.ImageContentTypeDetector;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -17,12 +16,12 @@ public class ImageContentTypeDetectorImpl implements ImageContentTypeDetector {
      *
      * @param imageData массив байт содержимого изображения
      * @return соответствующий MediaType или APPLICATION_OCTET_STREAM если формат не распознан
-     * @throws InvalidImageException если imageData равен null
+     * @throws IllegalStateException если imageData равен null
      */
     @Override
     public MediaType detect(byte[] imageData) {
         if (imageData == null || imageData.length == 0) {
-            throw new InvalidImageException("Image data cannot be null");
+            throw new IllegalStateException("Image data cannot be null");
         }
 
         if (isJpeg(imageData)) return MediaType.IMAGE_JPEG;

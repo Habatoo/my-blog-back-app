@@ -1,6 +1,5 @@
 package io.github.habatoo.service;
 
-import io.github.habatoo.exception.image.InvalidImageException;
 import org.springframework.http.MediaType;
 
 /**
@@ -13,7 +12,7 @@ public interface ImageContentTypeDetector {
      *
      * @param imageData массив байт содержимого изображения
      * @return соответствующий MediaType или APPLICATION_OCTET_STREAM если формат не распознан
-     * @throws InvalidImageException если imageData равен null
+     * @throws IllegalStateException если imageData равен null
      */
     MediaType detect(byte[] imageData);
 

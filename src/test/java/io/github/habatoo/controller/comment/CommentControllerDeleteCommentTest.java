@@ -10,8 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Тесты обработки удаления комментария.
@@ -21,7 +20,7 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
     @DisplayName("Должен удалить комментарий и вернуть 200 статус")
     @Test
     void shouldDeleteCommentAndReturnOkStatus() {
-        when(commentService.deleteComment(VALID_POST_ID, VALID_COMMENT_ID)).thenReturn(true);
+        doNothing().when(commentService).deleteComment(VALID_POST_ID, VALID_COMMENT_ID);
 
         ResponseEntity<Void> response = commentController.deleteComment(VALID_POST_ID, VALID_COMMENT_ID);
 
@@ -33,7 +32,8 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
     @DisplayName("Должен выбросить исключение при удалении несуществующего комментария")
     @Test
     void shouldThrowExceptionWhenDeletingNonExistentComment() {
-        when(commentService.deleteComment(VALID_POST_ID, NON_EXISTENT_COMMENT_ID)).thenReturn(false);
+        doThrow(new EmptyResultDataAccessException("Comment not found", 1))
+                .when(commentService).deleteComment(VALID_POST_ID, NON_EXISTENT_COMMENT_ID);
 
         assertThrows(EmptyResultDataAccessException.class, () ->
                 commentController.deleteComment(VALID_POST_ID, NON_EXISTENT_COMMENT_ID));
@@ -50,7 +50,7 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
             "999, 888"
     })
     void shouldDeleteCommentsWithDifferentIds(Long postId, Long commentId) {
-        when(commentService.deleteComment(postId, commentId)).thenReturn(true);
+        doNothing().when(commentService).deleteComment(postId, commentId);
 
         ResponseEntity<Void> response = commentController.deleteComment(postId, commentId);
 
@@ -62,7 +62,7 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
     @ParameterizedTest
     @ValueSource(longs = {1L, 2L, Long.MAX_VALUE - 1, Long.MAX_VALUE})
     void shouldHandleBoundaryIdValues(Long commentId) {
-        when(commentService.deleteComment(VALID_POST_ID, commentId)).thenReturn(true);
+        doNothing().when(commentService).deleteComment(VALID_POST_ID, commentId);
 
         ResponseEntity<Void> response = commentController.deleteComment(VALID_POST_ID, commentId);
 
@@ -70,3 +70,4 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
         verify(commentService).deleteComment(VALID_POST_ID, commentId);
     }
 }
+

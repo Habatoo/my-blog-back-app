@@ -21,7 +21,7 @@ import java.util.Optional;
  * @see Comment
  * @see CommentRepositoryImpl
  */
-public interface CommentRepository extends Repository<Comment, Long> {
+public interface CommentRepository {
 
     /**
      * Выполняет поиск всех комментариев, связанных с указанным постом.
@@ -53,7 +53,7 @@ public interface CommentRepository extends Repository<Comment, Long> {
      * @throws DataAccessException   при ошибках сохранения в базу данных
      * @throws IllegalStateException если не удалось получить сгенерированный ключ
      */
-    Long save(CommentCreateRequest commentCreateRequest);
+    CommentResponse save(CommentCreateRequest commentCreateRequest);
 
     /**
      * Обновляет текст существующего комментария и временную метку обновления.
@@ -64,7 +64,7 @@ public interface CommentRepository extends Repository<Comment, Long> {
      * @return количество обновленных записей
      * @throws DataAccessException при ошибках обновления в базе данных
      */
-    int updateText(Long commentId, String text);
+    CommentResponse updateText(Long commentId, String text);
 
     /**
      * Удаляет комментарий по идентификатору.
@@ -76,24 +76,4 @@ public interface CommentRepository extends Repository<Comment, Long> {
      */
     int deleteById(Long commentId);
 
-    /**
-     * Проверяет существование комментария с указанными идентификаторами.
-     * Используется для валидации принадлежности комментария к посту.
-     *
-     * @param commentId идентификатор комментария
-     * @param postId    идентификатор поста
-     * @return true если комментарий существует и принадлежит указанному посту, иначе false
-     * @throws DataAccessException при ошибках доступа к базе данных
-     */
-    boolean existsByIdAndPostId(Long commentId, Long postId);
-
-    /**
-     * Проверяет существование поста по идентификатору.
-     * Используется для валидации перед созданием комментариев.
-     *
-     * @param postId идентификатор поста
-     * @return true если пост существует, иначе false
-     * @throws DataAccessException при ошибках доступа к базе данных
-     */
-    boolean existsPostById(Long postId);
 }
