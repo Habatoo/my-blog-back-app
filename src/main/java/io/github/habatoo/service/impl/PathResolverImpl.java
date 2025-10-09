@@ -33,7 +33,7 @@ public class PathResolverImpl implements PathResolver {
     }
 
     /**
-     *
+     * {@inheritDoc}
      */
     @Override
     public Path resolveFilePath(Path directory, String filename) {

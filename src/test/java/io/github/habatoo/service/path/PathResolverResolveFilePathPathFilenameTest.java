@@ -20,7 +20,6 @@ class PathResolverResolveFilePathPathFilenameTest extends PathResolverTestBase {
     @CsvSource({
             "uploads/posts/123, image.jpg",
             "uploads/posts/456, nested.png",
-//            "uploads/posts/789, ../image.jpg",  // нормализуется правильно внутри TODO
             "uploads/posts/100, ./file.txt"
     })
     void shouldResolveFilePathWithDirectoryWithinBase(String dir, String filename) {
@@ -37,6 +36,7 @@ class PathResolverResolveFilePathPathFilenameTest extends PathResolverTestBase {
             "uploads/other_dir, image.jpg",
             "uploads/posts/123, ../../escape.jpg",
             "/etc, passwd",
+            "'C:\\uploads\\posts\\123', image.jpg",
             "../outside_dir, image.png"
     })
     void shouldThrowSecurityExceptionForInvalidDirectoryOrFile(String dir, String filename) {
