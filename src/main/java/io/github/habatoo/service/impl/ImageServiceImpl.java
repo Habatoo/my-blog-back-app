@@ -16,6 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Сервис для обработки изображений поста.
+ *
+ * @see ImageRepository
+ * @see FileStorageService
+ * @see ImageValidator
+ * @see ImageContentTypeDetector
  */
 @Service
 public class ImageServiceImpl implements ImageService {

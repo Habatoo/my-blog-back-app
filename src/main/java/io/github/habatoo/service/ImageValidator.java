@@ -1,9 +1,13 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.repository.CommentRepository;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Контракт для проверки изображений перед обработкой.
+ * Интерфейс для проверки изображений перед обработкой.
+ *
+ * @see CommentRepository
+ * @see CommentService
  */
 public interface ImageValidator {
 

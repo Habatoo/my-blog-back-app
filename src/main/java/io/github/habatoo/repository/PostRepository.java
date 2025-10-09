@@ -3,7 +3,6 @@ package io.github.habatoo.repository;
 import io.github.habatoo.dto.request.PostCreateRequest;
 import io.github.habatoo.dto.request.PostRequest;
 import io.github.habatoo.dto.response.PostResponse;
-import io.github.habatoo.model.Post;
 import io.github.habatoo.repository.impl.PostRepositoryImpl;
 import org.springframework.data.repository.Repository;
 
@@ -17,7 +16,6 @@ import java.util.List;
  * методы для извлечения постов вместе со связанными сущностями.</p>
  *
  * @see Repository
- * @see Post
  * @see PostRepositoryImpl
  */
 public interface PostRepository {

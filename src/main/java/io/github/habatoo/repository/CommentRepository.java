@@ -2,10 +2,7 @@ package io.github.habatoo.repository;
 
 import io.github.habatoo.dto.request.CommentCreateRequest;
 import io.github.habatoo.dto.response.CommentResponse;
-import io.github.habatoo.model.Comment;
-import io.github.habatoo.repository.impl.CommentRepositoryImpl;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.repository.Repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,12 +11,7 @@ import java.util.Optional;
  * Репозиторий для работы с комментариями блога.
  * Определяет контракты для операций доступа к данным комментариев.
  *
- * <p>Интерфейс расширяет Spring Data {@link Repository} и предоставляет
- * методы для извлечения комментариев, связанных с конкретными постами.</p>
- *
- * @see Repository
- * @see Comment
- * @see CommentRepositoryImpl
+ * @see CommentRepository
  */
 public interface CommentRepository {
 

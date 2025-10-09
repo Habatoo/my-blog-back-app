@@ -5,6 +5,7 @@ import io.github.habatoo.dto.request.PostRequest;
 import io.github.habatoo.dto.response.PostListResponse;
 import io.github.habatoo.dto.response.PostResponse;
 import io.github.habatoo.repository.PostRepository;
+import io.github.habatoo.service.FileStorageService;
 import io.github.habatoo.service.PostService;
 import org.springframework.stereotype.Service;
 
@@ -21,16 +22,22 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @see PostRepository
  * @see PostResponse
+ * @see FileStorageService
  */
 @Service
 public class PostServiceImpl implements PostService {
 
     private final PostRepository postRepository;
+    private final FileStorageService fileStorageService;
 
     private final Map<Long, PostResponse> postCache = new ConcurrentHashMap<>();
 
-    public PostServiceImpl(PostRepository postRepository) {
+    public PostServiceImpl(
+            PostRepository postRepository,
+            FileStorageService fileStorageService
+    ) {
         this.postRepository = postRepository;
+        this.fileStorageService = fileStorageService;
         initCache();
     }
 
@@ -104,6 +111,7 @@ public class PostServiceImpl implements PostService {
     public synchronized void deletePost(Long id) {
         postRepository.deletePost(id);
         postCache.remove(id);
+        fileStorageService.deletePostDirectory(id);
     }
 
     /**

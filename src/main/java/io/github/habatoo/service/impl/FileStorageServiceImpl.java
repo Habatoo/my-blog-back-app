@@ -16,6 +16,9 @@ import java.util.stream.Stream;
 
 /**
  * Сервис для обработки файлов.
+ *
+ * @see FileNameGenerator
+ * @see PathResolver
  */
 @Service
 public class FileStorageServiceImpl implements FileStorageService {

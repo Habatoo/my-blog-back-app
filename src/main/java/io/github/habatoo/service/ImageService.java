@@ -1,12 +1,16 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.repository.CommentRepository;
 import io.github.habatoo.service.dto.ImageResponse;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Контракт для обработки изображений
+ * Интерфейс для обработки изображений.
+ *
+ * @see CommentRepository
+ * @see CommentService
  */
 public interface ImageService {
 

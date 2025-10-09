@@ -1,9 +1,14 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.repository.CommentRepository;
+
 import java.nio.file.Path;
 
 /**
- * Контракт для безопасного разрешения и валидации путей файлов.
+ * Интерфейс для безопасного разрешения и валидации путей файлов.
+ *
+ * @see CommentRepository
+ * @see CommentService
  */
 public interface PathResolver {
 

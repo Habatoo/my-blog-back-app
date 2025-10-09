@@ -9,17 +9,13 @@ import io.github.habatoo.repository.PostRepository;
 import java.util.Optional;
 
 /**
- * Сервис для работы с постами блога.
+ * Интерфейс для работы с постами блога.
  * Предоставляет бизнес-логику для операций с постами.
- *
- * <p>Сервис делегирует выполнение операций доступа к данным репозиторию
- * и не содержит сложной бизнес-логики.</p>
  *
  * @see PostRepository
  * @see PostResponse
  */
 public interface PostService {
-
 
     PostListResponse getPosts(String search, int pageNumber, int pageSize);
 

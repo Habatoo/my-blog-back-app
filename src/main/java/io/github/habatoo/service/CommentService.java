@@ -2,7 +2,6 @@ package io.github.habatoo.service;
 
 import io.github.habatoo.dto.request.CommentCreateRequest;
 import io.github.habatoo.dto.response.CommentResponse;
-import io.github.habatoo.model.Comment;
 import io.github.habatoo.repository.CommentRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,14 +9,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Репозиторий для работы с комментариями блога.
+ * Интерфейс для работы с комментариями блога.
  * Предоставляет бизнес-логику для операций с комментариями к постам.
  *
  * <p>Делегирует выполнение операций доступа к данным репозиторию
  * и обеспечивает работу с комментариями, связанных с конкретными постами.</p>
  *
  * @see CommentRepository
- * @see Comment
  */
 @Transactional
 public interface CommentService {

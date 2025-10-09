@@ -1,7 +1,12 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.repository.CommentRepository;
+
 /**
- * Контракт для генерации уникальных имена файлов.
+ * Интерфейс для генерации уникальных имена файлов.
+ *
+ * @see CommentRepository
+ * @see CommentService
  */
 public interface FileNameGenerator {
 

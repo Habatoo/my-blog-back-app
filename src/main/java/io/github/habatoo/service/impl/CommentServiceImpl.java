@@ -2,7 +2,6 @@ package io.github.habatoo.service.impl;
 
 import io.github.habatoo.dto.request.CommentCreateRequest;
 import io.github.habatoo.dto.response.CommentResponse;
-import io.github.habatoo.model.Comment;
 import io.github.habatoo.repository.CommentRepository;
 import io.github.habatoo.service.CommentService;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -23,7 +22,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * и обеспечивает работу с комментариями, связанных с конкретными постами.</p>
  *
  * @see CommentRepository
- * @see Comment
+ * @see PostServiceImpl
  */
 @Service
 @Transactional

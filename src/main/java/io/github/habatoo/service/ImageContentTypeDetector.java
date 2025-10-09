@@ -1,9 +1,13 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.repository.CommentRepository;
 import org.springframework.http.MediaType;
 
 /**
- * Контракт типа контента изображения на основе анализа содержимого файла.
+ * Интерфейс типа контента изображения на основе анализа содержимого файла.
+ *
+ * @see CommentRepository
+ * @see CommentService
  */
 public interface ImageContentTypeDetector {
 

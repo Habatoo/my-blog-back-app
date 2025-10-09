@@ -1,11 +1,15 @@
 package io.github.habatoo.service;
 
+import io.github.habatoo.repository.CommentRepository;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 /**
- * Контракт для обработки файлов
+ * Интерфейс для обработки файлов
+ *
+ * @see CommentRepository
+ * @see CommentService
  */
 public interface FileStorageService {
 
