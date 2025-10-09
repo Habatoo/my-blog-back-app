@@ -38,6 +38,9 @@ public class CommentServiceImpl implements CommentService {
         this.postService = postService;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<CommentResponse> getCommentsByPostId(Long postId) {
         checkPostIsExist(postId);
@@ -46,6 +49,9 @@ public class CommentServiceImpl implements CommentService {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<CommentResponse> getCommentByPostIdAndId(Long postId, Long commentId) {
         CopyOnWriteArrayList<CommentResponse> comments = commentsCache.get(postId);
@@ -57,6 +63,9 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.findByPostIdAndId(postId, commentId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CommentResponse createComment(CommentCreateRequest request) {
         checkPostIsExist(request.postId());
@@ -73,6 +82,9 @@ public class CommentServiceImpl implements CommentService {
         return newComment;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CommentResponse updateComment(Long postId, Long commentId, String text) {
         checkPostIsExist(postId);
@@ -91,6 +103,9 @@ public class CommentServiceImpl implements CommentService {
         return updatedComment;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void deleteComment(Long postId, Long commentId) {
         checkPostIsExist(postId);

@@ -63,17 +63,26 @@ public class CommentRepositoryImpl implements CommentRepository {
         this.commentRowMapper = commentRowMapper;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<CommentResponse> findByPostId(Long postId) {
         return jdbcTemplate.query(FIND_BY_POST_ID, commentRowMapper, postId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<CommentResponse> findByPostIdAndId(Long postId, Long commentId) {
         List<CommentResponse> comments = jdbcTemplate.query(FIND_BY_POST_ID_AND_ID, commentRowMapper, postId, commentId);
         return comments.stream().findFirst();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CommentResponse save(CommentCreateRequest commentCreateRequest) {
         LocalDateTime now = LocalDateTime.now();
@@ -92,6 +101,9 @@ public class CommentRepositoryImpl implements CommentRepository {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public CommentResponse updateText(Long commentId, String text) {
         return jdbcTemplate.queryForObject(
@@ -107,6 +119,9 @@ public class CommentRepositoryImpl implements CommentRepository {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public int deleteById(Long commentId) {
         return jdbcTemplate.update(DELETE_COMMENT, commentId);

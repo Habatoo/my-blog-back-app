@@ -12,11 +12,7 @@ import org.springframework.stereotype.Component;
 public class ImageContentTypeDetectorImpl implements ImageContentTypeDetector {
 
     /**
-     * Определяет MediaType изображения на основе анализа его содержимого.
-     *
-     * @param imageData массив байт содержимого изображения
-     * @return соответствующий MediaType или APPLICATION_OCTET_STREAM если формат не распознан
-     * @throws IllegalStateException если imageData равен null
+     * {@inheritDoc}
      */
     @Override
     public MediaType detect(byte[] imageData) {
@@ -37,7 +33,10 @@ public class ImageContentTypeDetectorImpl implements ImageContentTypeDetector {
      * @return true если данные соответствуют формату JPEG
      */
     private boolean isJpeg(byte[] data) {
-        return data.length >= 3 && data[0] == (byte) 0xFF && data[1] == (byte) 0xD8;
+        return data.length >= 3 &&
+                (data[0] & 0xFF) == 0xFF &&
+                (data[1] & 0xFF) == 0xD8 &&
+                (data[2] & 0xFF) == 0xFF;
     }
 
     /**
@@ -47,7 +46,15 @@ public class ImageContentTypeDetectorImpl implements ImageContentTypeDetector {
      * @return true если данные соответствуют формату PNG
      */
     private boolean isPng(byte[] data) {
-        return data.length >= 8 && data[0] == (byte) 0x89 && data[1] == 0x50;
+        return data.length >= 8 &&
+                (data[0] & 0xFF) == 0x89 &&
+                data[1] == 0x50 &&
+                data[2] == 0x4E &&
+                data[3] == 0x47 &&
+                data[4] == 0x0D &&
+                data[5] == 0x0A &&
+                data[6] == 0x1A &&
+                data[7] == 0x0A;
     }
 
 }

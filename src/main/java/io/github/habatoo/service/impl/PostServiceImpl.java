@@ -41,6 +41,9 @@ public class PostServiceImpl implements PostService {
         allPosts.forEach(post -> postCache.put(post.id(), post));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public synchronized PostListResponse getPosts(String search, int pageNumber, int pageSize) {
         List<PostResponse> filtered = postCache.values().stream()
@@ -58,11 +61,17 @@ public class PostServiceImpl implements PostService {
         return new PostListResponse(page, fromIndex > 0, toIndex < totalCount, totalCount);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Optional<PostResponse> getPostById(Long id) {
         return Optional.ofNullable(postCache.get(id));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public synchronized PostResponse createPost(PostCreateRequest postCreateRequest) {
         try {
@@ -74,7 +83,9 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public synchronized PostResponse updatePost(PostRequest postRequest) {
         try {
@@ -86,12 +97,18 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public synchronized void deletePost(Long id) {
         postRepository.deletePost(id);
         postCache.remove(id);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public synchronized int incrementLikes(Long id) {
         postRepository.incrementLikes(id);
@@ -113,6 +130,9 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public synchronized void incrementCommentsCount(Long id) {
         try {
@@ -135,6 +155,9 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public synchronized void decrementCommentsCount(Long id) {
         try {
@@ -157,6 +180,9 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean postExists(Long postId) {
         return postCache.containsKey(postId);

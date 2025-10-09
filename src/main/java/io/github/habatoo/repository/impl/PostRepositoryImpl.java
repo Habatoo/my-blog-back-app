@@ -24,6 +24,49 @@ import java.util.List;
 @Repository
 public class PostRepositoryImpl implements PostRepository {
 
+    private static final String FIND_ALL_POSTS = """
+            SELECT p.id, p.title, p.text, p.likes_count, p.comments_count
+            FROM post p
+            ORDER BY p.created_at DESC
+            """;
+
+    private static final String CREATE_POST = """
+            INSERT INTO post (title, text, likes_count, comments_count, created_at, updated_at)
+            VALUES (?, ?, 0, 0, ?, ?)
+            RETURNING id, title, text, likes_count, comments_count
+            """;
+
+    private static final String UPDATE_POST = """
+            UPDATE post
+            SET title = ?, text = ?, updated_at = ?
+            WHERE id = ?
+            RETURNING id, title, text, likes_count, comments_count
+            """;
+
+    private static final String DELETE_POST = """
+            DELETE FROM post WHERE id = ?
+            """;
+
+    private static final String GET_TAGS_FOR_POST = """
+            SELECT t.name FROM tag t
+            JOIN post_tag pt ON t.id = pt.tag_id
+            WHERE pt.post_id = ?
+            """;
+
+    private static final String INCREMENT_LIKES = """
+            UPDATE post SET likes_count = likes_count + 1 WHERE id = ?
+            """;
+
+    private static final String INCREMENT_COMMENTS_COUNT = """
+            UPDATE post SET comments_count = comments_count + 1 WHERE id = ?
+            """;
+
+    private static final String DECREMENT_COMMENTS_COUNT = """
+            UPDATE post
+            SET comments_count = CASE WHEN comments_count > 0 THEN comments_count - 1 ELSE 0 END
+            WHERE id = ?
+            """;
+
     private final JdbcTemplate jdbcTemplate;
     private final PostListRowMapper postListRowMapper;
 
@@ -33,31 +76,25 @@ public class PostRepositoryImpl implements PostRepository {
         this.postListRowMapper = postListRowMapper;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<PostResponse> findAllPosts() {
-        String sql = """
-                SELECT p.id, p.title, p.text, p.likes_count, p.comments_count
-                FROM post p
-                ORDER BY p.created_at DESC
-                """;
-        List<PostResponse> posts = jdbcTemplate.query(sql, postListRowMapper);
-
+        List<PostResponse> posts = jdbcTemplate.query(FIND_ALL_POSTS, postListRowMapper);
         return posts.stream()
                 .map(this::enrichWithTags)
                 .toList();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PostResponse createPost(PostCreateRequest postCreateRequest) {
-        String sql = """
-                INSERT INTO post (title, text, likes_count, comments_count, created_at, updated_at)
-                VALUES (?, ?, 0, 0, ?, ?)
-                RETURNING id, title, text, likes_count, comments_count
-                """;
         LocalDateTime now = LocalDateTime.now();
-
         return jdbcTemplate.queryForObject(
-                sql,
+                CREATE_POST,
                 (rs, rowNum) -> new PostResponse(
                         rs.getLong("id"),
                         rs.getString("title"),
@@ -73,17 +110,13 @@ public class PostRepositoryImpl implements PostRepository {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PostResponse updatePost(PostRequest postRequest) {
-        String sql = """
-                UPDATE post
-                SET title = ?, text = ?, updated_at = ?
-                WHERE id = ?
-                RETURNING id, title, text, likes_count, comments_count
-                """;
-
         return jdbcTemplate.queryForObject(
-                sql,
+                UPDATE_POST,
                 (rs, rowNum) -> new PostResponse(
                         rs.getLong("id"),
                         rs.getString("title"),
@@ -99,26 +132,24 @@ public class PostRepositoryImpl implements PostRepository {
         );
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void deletePost(Long id) {
-        String sql = """
-                DELETE FROM post WHERE id = ?
-                """;
-        int deletedRows = jdbcTemplate.update(sql, id);
+        int deletedRows = jdbcTemplate.update(DELETE_POST, id);
         if (deletedRows == 0) {
             throw new IllegalStateException("Post to delete not found with id " + id);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<String> getTagsForPost(Long postId) {
         try {
-            String sql = """
-                    SELECT t.name FROM tag t
-                    JOIN post_tag pt ON t.id = pt.tag_id
-                    WHERE pt.post_id = ?
-                    """;
-            return jdbcTemplate.query(sql,
+            return jdbcTemplate.query(GET_TAGS_FOR_POST,
                     (rs, rowNum) -> rs.getString("name"),
                     postId
             );
@@ -127,33 +158,32 @@ public class PostRepositoryImpl implements PostRepository {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void incrementLikes(Long postId) {
-        String sql = """
-                UPDATE post SET likes_count = likes_count + 1 WHERE id = ?
-                """;
-        int updatedRows = jdbcTemplate.update(sql, postId);
+        int updatedRows = jdbcTemplate.update(INCREMENT_LIKES, postId);
         if (updatedRows == 0) {
             throw new EmptyResultDataAccessException("Post with id " + postId + " not found", 1);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void incrementCommentsCount(Long postId) {
-        String sql = "UPDATE post SET comments_count = comments_count + 1 WHERE id = ?";
-        jdbcTemplate.update(sql, postId);
+        jdbcTemplate.update(INCREMENT_COMMENTS_COUNT, postId);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void decrementCommentsCount(Long postId) {
-        String sql = """
-                UPDATE post
-                SET comments_count = CASE WHEN comments_count > 0 THEN comments_count - 1 ELSE 0 END
-                WHERE id = ?
-                """;
-        jdbcTemplate.update(sql, postId);
+        jdbcTemplate.update(DECREMENT_COMMENTS_COUNT, postId);
     }
-
 
     private PostResponse enrichWithTags(PostResponse post) {
         List<String> tags = getTagsForPost(post.id());
@@ -166,4 +196,5 @@ public class PostRepositoryImpl implements PostRepository {
                 post.commentsCount()
         );
     }
+
 }

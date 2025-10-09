@@ -2,6 +2,7 @@ package io.github.habatoo.service.impl;
 
 import io.github.habatoo.service.FileNameGenerator;
 import io.github.habatoo.service.FileStorageService;
+import io.github.habatoo.service.PathResolver;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,17 +20,17 @@ import java.util.stream.Stream;
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
 
-    private final String uploadDir;
+    private final Path baseUploadPath;
     private final FileNameGenerator fileNameGenerator;
-    private final PathResolverImpl pathResolver;
+    private final PathResolver pathResolver;
 
     public FileStorageServiceImpl(
             @Value("${app.upload.dir:uploads/posts/}") String uploadDir,
             @Value("${app.upload.auto-create-dir:true}") boolean autoCreateDir,
             FileNameGenerator fileNameGenerator,
-            PathResolverImpl pathResolver) {
+            PathResolver pathResolver) {
 
-        this.uploadDir = uploadDir;
+        this.baseUploadPath = Paths.get(uploadDir).normalize().toAbsolutePath();
         this.fileNameGenerator = fileNameGenerator;
         this.pathResolver = pathResolver;
 
@@ -47,7 +48,7 @@ public class FileStorageServiceImpl implements FileStorageService {
         String fileName = fileNameGenerator.generateFileName(file.getOriginalFilename());
         Path filePath = pathResolver.resolveFilePath(postDir, fileName);
         file.transferTo(filePath);
-        return postId + "/" + fileName;
+        return String.format("%s/%s", postId, fileName);
     }
 
     /**
@@ -73,69 +74,43 @@ public class FileStorageServiceImpl implements FileStorageService {
      */
     @Override
     public void deletePostDirectory(Long postId) {
+        Path postDir = baseUploadPath.resolve(postId.toString()).normalize();
+        if (!postDir.startsWith(baseUploadPath)) {
+            throw new SecurityException("Attempt to access directory outside upload directory");
+        }
         try {
-            Path postDir = Paths.get(uploadDir, postId.toString()).normalize();
-
-            if (!postDir.startsWith(Paths.get(uploadDir).normalize())) {
-                throw new SecurityException("Attempt to access directory outside upload directory");
-            }
-
             if (Files.exists(postDir) && Files.isDirectory(postDir)) {
-                deleteDirectoryRecursively(postDir);
+                try (Stream<Path> paths = Files.walk(postDir)) {
+                    paths.sorted(Comparator.reverseOrder())
+                            .forEach(path -> {
+                                try {
+                                    Files.delete(path);
+                                } catch (IOException e) {
+                                    throw new RuntimeException("Failed to delete: " + path, e);
+                                }
+                            });
+                }
             }
-
         } catch (IOException e) {
             throw new RuntimeException("Error deleting post directory: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Создает директорию для конкретного поста.
-     *
-     * @param postId идентификатор поста
-     * @return путь к созданной директории
-     * @throws IOException если не удалось создать директорию
-     */
     private Path createPostDirectory(Long postId) throws IOException {
-        Path postDir = Paths.get(uploadDir, postId.toString());
+        Path postDir = baseUploadPath.resolve(postId.toString());
         if (!Files.exists(postDir)) {
             Files.createDirectories(postDir);
         }
         return postDir;
     }
 
-    /**
-     * Рекурсивно удаляет директорию со всем содержимым
-     *
-     * @param directory путь к директории для удаления
-     * @throws IOException при ошибках удаления
-     */
-    private void deleteDirectoryRecursively(Path directory) throws IOException {
-        if (Files.exists(directory) && Files.isDirectory(directory)) {
-            try (Stream<Path> paths = Files.walk(directory)) {
-                paths.sorted(Comparator.reverseOrder())
-                        .forEach(path -> {
-                            try {
-                                Files.delete(path);
-                            } catch (IOException e) {
-                                throw new RuntimeException("Failed to delete: " + path, e);
-                            }
-                        });
-            }
-        }
-    }
-
-    /**
-     * Создает директорию для загрузки файлов при старте приложения
-     */
     private void createUploadDirectory() {
         try {
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+            if (!Files.exists(baseUploadPath)) {
+                Files.createDirectories(baseUploadPath);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to create upload directory: " + uploadDir, e);
+            throw new RuntimeException("Failed to create upload directory: " + baseUploadPath, e);
         }
     }
 }
