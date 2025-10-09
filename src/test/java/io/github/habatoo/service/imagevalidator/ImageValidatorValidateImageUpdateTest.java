@@ -1,4 +1,4 @@
-package io.github.habatoo.service.validator;
+package io.github.habatoo.service.imagevalidator;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

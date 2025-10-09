@@ -1,4 +1,4 @@
-package io.github.habatoo.service.path;
+package io.github.habatoo.service.pathresolver;
 
 import io.github.habatoo.service.PathResolver;
 import io.github.habatoo.service.impl.PathResolverImpl;

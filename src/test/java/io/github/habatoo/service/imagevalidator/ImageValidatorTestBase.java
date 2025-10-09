@@ -1,4 +1,4 @@
-package io.github.habatoo.service.validator;
+package io.github.habatoo.service.imagevalidator;
 
 import io.github.habatoo.service.ImageValidator;
 import io.github.habatoo.service.impl.ImageValidatorImpl;
