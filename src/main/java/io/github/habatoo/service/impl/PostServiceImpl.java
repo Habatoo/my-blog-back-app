@@ -10,11 +10,9 @@ import io.github.habatoo.service.PostService;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Сервис для работы с постами блога.
@@ -52,17 +50,34 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public synchronized PostListResponse getPosts(String search, int pageNumber, int pageSize) {
+    public PostListResponse getPosts(String search, int pageNumber, int pageSize) {
+        List<String> words = Arrays.stream(search.split("\\s+"))
+                .filter(w -> !w.isBlank())
+                .toList();
+
+        List<String> tags = words.stream()
+                .filter(w -> w.startsWith("#"))
+                .map(w -> w.substring(1))
+                .toList();
+
+        String searchPart = words.stream()
+                .filter(w -> !w.startsWith("#"))
+                .collect(Collectors.joining(" "));
+
         List<PostResponse> filtered = postCache.values().stream()
-                .filter(post -> post.title().contains(search) || post.text().contains(search))
+                .filter(post -> searchPart.isEmpty()
+                        || post.title().contains(searchPart)
+                        || post.text().contains(searchPart))
+                .filter(post -> tags.isEmpty()
+                        || tags.stream().allMatch(tag ->
+                        post.tags().stream().anyMatch(t -> t.equals(tag))
+                ))
                 .sorted(Comparator.comparing(PostResponse::id))
                 .toList();
 
         int totalCount = filtered.size();
-
         int fromIndex = Math.min((pageNumber - 1) * pageSize, totalCount);
         int toIndex = Math.min(fromIndex + pageSize, totalCount);
-
         List<PostResponse> page = filtered.subList(fromIndex, toIndex);
 
         return new PostListResponse(page, fromIndex > 0, toIndex < totalCount, totalCount);
@@ -80,7 +95,7 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public synchronized PostResponse createPost(PostCreateRequest postCreateRequest) {
+    public PostResponse createPost(PostCreateRequest postCreateRequest) {
         try {
             PostResponse createdPost = postRepository.createPost(postCreateRequest);
             postCache.put(createdPost.id(), createdPost);
@@ -94,7 +109,7 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public synchronized PostResponse updatePost(PostRequest postRequest) {
+    public PostResponse updatePost(PostRequest postRequest) {
         try {
             PostResponse updatedPost = postRepository.updatePost(postRequest);
             postCache.put(updatedPost.id(), updatedPost);
@@ -108,7 +123,7 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void deletePost(Long id) {
+    public void deletePost(Long id) {
         postRepository.deletePost(id);
         postCache.remove(id);
         fileStorageService.deletePostDirectory(id);
@@ -118,7 +133,7 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public synchronized int incrementLikes(Long id) {
+    public int incrementLikes(Long id) {
         postRepository.incrementLikes(id);
         PostResponse post = postCache.get(id);
         if (post != null) {
@@ -142,7 +157,7 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void incrementCommentsCount(Long id) {
+    public void incrementCommentsCount(Long id) {
         try {
             postRepository.incrementCommentsCount(id);
             PostResponse post = postCache.get(id);
@@ -167,7 +182,7 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public synchronized void decrementCommentsCount(Long id) {
+    public void decrementCommentsCount(Long id) {
         try {
             postRepository.decrementCommentsCount(id);
             PostResponse post = postCache.get(id);
