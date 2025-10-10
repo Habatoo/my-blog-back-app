@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты для получения изображения поста.
  */
+@DisplayName("Тесты метода getPostImage для получения изображения поста.")
 class ImageControllerGetPostImageTest extends ImageControllerTestBase {
 
     @DisplayName("Должен вернуть изображение JPEG с правильным Content-Type")

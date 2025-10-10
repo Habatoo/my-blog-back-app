@@ -20,6 +20,7 @@ import static org.mockito.Mockito.*;
  * Класс для тестирования ImageRepositoryImpl.
  */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("Тесты методов ImageRepository.")
 class ImageRepositoryImplTest {
 
     @Mock
@@ -30,17 +31,17 @@ class ImageRepositoryImplTest {
     private final Long existingPostId = 1L;
     private final Long nonExistingPostId = 999L;
     private final String imageName = "image_file.jpg";
-    final static String GET_IMAGE_FILE_NAME = """
+    private static final String GET_IMAGE_FILE_NAME = """
             SELECT image_url
             FROM post
             WHERE id = ?
             """;
-    final static String UPDATE_POST_IMAGE = """
+    private static final String UPDATE_POST_IMAGE = """
             UPDATE post
             SET image_name = ?, image_size = ?, image_url = ?
             WHERE id = ?
             """;
-    final static String CHECK_POST_EXISTS = """
+    private static final String CHECK_POST_EXISTS = """
             SELECT COUNT(1)
             FROM post
             WHERE id = ?

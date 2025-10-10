@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки создания постов.
  */
+@DisplayName("Тесты метода createPost для обработки создания постов.")
 class PostControllerCreatePostTest extends PostControllerTestBase {
 
     @DisplayName("Должен создать пост и вернуть 201 статус")

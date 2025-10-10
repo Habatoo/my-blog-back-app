@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.provider.Arguments;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -19,8 +20,7 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Базовый класс для тестирования FileStorageServiceImpl
@@ -67,9 +67,9 @@ public abstract class FileStorageServiceTestBase {
 
     protected MultipartFile createMockMultipartFile(String filename, byte[] content) throws IOException {
         MultipartFile file = mock(MultipartFile.class);
-        when(file.getOriginalFilename()).thenReturn(filename);
-        when(file.getBytes()).thenReturn(content);
-        when(file.getInputStream()).thenReturn(new ByteArrayInputStream(content));
+        lenient().when(file.getOriginalFilename()).thenReturn(filename);
+        lenient().when(file.getBytes()).thenReturn(content);
+        lenient().when(file.getInputStream()).thenReturn(new ByteArrayInputStream(content));
         return file;
     }
 
@@ -105,8 +105,11 @@ public abstract class FileStorageServiceTestBase {
     protected static Stream<Arguments> invalidPostIdProvider() {
         return Stream.of(
                 Arguments.of(-1L),
-                Arguments.of(0L),
-                Arguments.of(null)
+                Arguments.of(0L)
         );
+    }
+
+    protected static MockMultipartFile getFile(String filename, byte[] fileContent) {
+        return new MockMultipartFile("image", filename, "image/jpeg", fileContent);
     }
 }

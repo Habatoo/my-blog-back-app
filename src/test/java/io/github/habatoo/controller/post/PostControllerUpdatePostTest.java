@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки редактирования постов.
  */
+@DisplayName("Тесты метода updatePost для обработки редактирования постов.")
 class PostControllerUpdatePostTest extends PostControllerTestBase {
 
     @DisplayName("Должен обновить пост и вернуть 200 статус")

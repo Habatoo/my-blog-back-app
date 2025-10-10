@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Тесты для метода generateFileName
  */
+@DisplayName("Тесты метода generateFileName")
 class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
 
     @DisplayName("Должен сгенерировать корректное имя файла для различных расширений")

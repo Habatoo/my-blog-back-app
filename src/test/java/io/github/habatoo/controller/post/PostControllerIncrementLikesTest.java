@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки инкремента лайков у постов.
  */
+@DisplayName("Тесты метода incrementLikes для обработки инкремента лайков у постов.")
 class PostControllerIncrementLikesTest extends PostControllerTestBase {
 
     @DisplayName("Должен увеличить лайки и вернуть обновленное количество")

@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты для метода loadImageFile.
  */
+@DisplayName("Тесты метода loadImageFile")
 class FileStorageServiceLoadImageFileTest extends FileStorageServiceTestBase {
 
     @DisplayName("Должен загрузить содержимое файла изображения")

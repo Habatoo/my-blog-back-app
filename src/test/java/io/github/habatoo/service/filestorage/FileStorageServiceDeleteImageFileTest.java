@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты для метода resolveFilePath.
  */
+@DisplayName("Тесты метода resolveFilePath")
 class FileStorageServiceDeleteImageFileTest extends FileStorageServiceTestBase {
 
     @DisplayName("Должен удалить файл изображения")

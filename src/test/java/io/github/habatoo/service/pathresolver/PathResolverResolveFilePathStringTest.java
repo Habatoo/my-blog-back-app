@@ -12,6 +12,9 @@ import java.nio.file.Paths;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Тесты метода resolveFilePath(String) PostServiceImpl.
+ */
 @DisplayName("Тесты PathResolverImpl.resolveFilePath(String)")
 @ExtendWith(MockitoExtension.class)
 class PathResolverResolveFilePathStringTest extends PathResolverTestBase {

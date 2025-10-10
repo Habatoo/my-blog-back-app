@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты для метода saveImageFile.
  */
+@DisplayName("Тесты метода saveImageFile")
 class FileStorageServiceSaveImageFileTest extends FileStorageServiceTestBase {
 
     @DisplayName("Должен сохранить файл изображения и вернуть путь")
@@ -25,7 +26,7 @@ class FileStorageServiceSaveImageFileTest extends FileStorageServiceTestBase {
         String filename = "test.jpg";
         String generatedName = "12345_6789.jpg";
         byte[] fileContent = "test image content".getBytes();
-        MultipartFile file = createMockMultipartFile(filename, fileContent);
+        MultipartFile file = getFile(filename, fileContent);
         Path postDir = baseUploadPath.resolve(VALID_POST_ID.toString());
         Path expectedFilePath = postDir.resolve(generatedName);
 
@@ -45,7 +46,7 @@ class FileStorageServiceSaveImageFileTest extends FileStorageServiceTestBase {
         String filename = "image.jpg";
         String generatedName = "timestamp_random.jpg";
         byte[] content = "content".getBytes();
-        MultipartFile file = createMockMultipartFile(filename, content);
+        MultipartFile file = getFile(filename, content);
         Path postDir = baseUploadPath.resolve(postId.toString());
         Path filePath = postDir.resolve(generatedName);
 

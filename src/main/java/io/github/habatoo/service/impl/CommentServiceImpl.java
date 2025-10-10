@@ -86,7 +86,7 @@ public class CommentServiceImpl implements CommentService {
      * {@inheritDoc}
      */
     @Override
-    public CommentResponse updateComment(Long postId, Long commentId, String text) {
+    public CommentResponse updateComment(Long postId, Long commentId, String text) { //TODO not update
         checkPostIsExist(postId);
         CommentResponse updatedComment;
         try {

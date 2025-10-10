@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Тесты для приватного метода getFileExtension
  */
+@DisplayName("Тесты метода getFileExtension")
 class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
 
     @DisplayName("Должен извлекать расширение из файлов с различными форматами")

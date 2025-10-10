@@ -23,9 +23,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Класс для тестирования PostRepositoryImpl.
+ * Класс для тестирования репозитория PostRepositoryImpl.
  */
 @ExtendWith(MockitoExtension.class)
+@DisplayName("Тесты методов репозитория PostRepositoryImpl для проверки извлечения постов вместе со связанными сущностями.")
 class PostRepositoryImplTest {
 
     @Mock
@@ -52,6 +53,18 @@ class PostRepositoryImplTest {
             INSERT INTO post (title, text, likes_count, comments_count, created_at, updated_at)
             VALUES (?, ?, 0, 0, ?, ?)
             RETURNING id, title, text, likes_count, comments_count
+            """;
+
+    private static final String INSERT_INTO_TAG = """
+            INSERT INTO tag (name)
+            VALUES (?)
+            ON CONFLICT (name) DO NOTHING
+            """;
+
+    private static final String INSERT_INTO_POST_TAG = """
+            INSERT INTO post_tag (post_id, tag_id)
+            VALUES (?, (SELECT id FROM tag WHERE name = ?))
+            ON CONFLICT DO NOTHING
             """;
 
     private static final String UPDATE_POST = """
@@ -98,7 +111,7 @@ class PostRepositoryImplTest {
                 new PostResponse(2L, "Title2", "Text2", List.of(), 0, 0)
         );
         when(jdbcTemplate.query(FIND_ALL_POSTS, postListRowMapper)).thenReturn(postsWithoutTags);
-        when(jdbcTemplate.query(GET_TAGS_FOR_POST,
+        when(jdbcTemplate.query(eq(GET_TAGS_FOR_POST),
                 any(RowMapper.class), anyLong())).thenReturn(List.of("tagA", "tagB"));
 
         List<PostResponse> result = postRepository.findAllPosts();
@@ -127,11 +140,6 @@ class PostRepositoryImplTest {
                 any(Timestamp.class))
         ).thenReturn(createdPost);
 
-        when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), anyString())).thenReturn(101L, 102L);
-        when(jdbcTemplate.update(anyString(), anyString())).thenReturn(1);
-        when(jdbcTemplate.update(anyString(), anyLong(), anyLong())).thenReturn(1);
-        when(jdbcTemplate.query(eq(GET_TAGS_FOR_POST), any(RowMapper.class), eq(POST_ID))).thenReturn(List.of("t1", "t2"));
-
         PostResponse result = postRepository.createPost(createRequest);
 
         assertEquals(POST_ID, result.id());
@@ -140,10 +148,8 @@ class PostRepositoryImplTest {
         assertEquals(List.of("t1", "t2"), result.tags());
 
         verify(jdbcTemplate).queryForObject(eq(CREATE_POST), any(RowMapper.class), any(), any(), any(), any());
-        verify(jdbcTemplate, times(2)).update(contains("INSERT INTO post"));
-        verify(jdbcTemplate, times(2)).update(contains("INSERT INTO tag"));
-        verify(jdbcTemplate, times(2)).queryForObject(contains("SELECT id FROM tag"), eq(Long.class), anyString());
-        verify(jdbcTemplate, times(2)).update(contains("INSERT INTO post_tag"));
+        verify(jdbcTemplate, times(1)).batchUpdate(contains(INSERT_INTO_TAG), anyList(), anyInt(), any());
+        verify(jdbcTemplate, times(1)).batchUpdate(contains(INSERT_INTO_POST_TAG), anyList(), anyInt(), any());
     }
 
     @Test
@@ -160,8 +166,6 @@ class PostRepositoryImplTest {
                 any(Timestamp.class),
                 eq(updateRequest.id())))
                 .thenReturn(updatedPost);
-        when(jdbcTemplate.query(eq(GET_TAGS_FOR_POST), any(RowMapper.class), eq(POST_ID)))
-                .thenReturn(List.of("tag1"));
 
         PostResponse result = postRepository.updatePost(updateRequest);
 
@@ -169,7 +173,6 @@ class PostRepositoryImplTest {
         assertTrue(result.tags().contains("tag1"));
 
         verify(jdbcTemplate).queryForObject(eq(UPDATE_POST), any(RowMapper.class), any(), any(), any(), any());
-        verify(jdbcTemplate).query(eq(GET_TAGS_FOR_POST), any(RowMapper.class), eq(POST_ID));
     }
 
     @Test
@@ -197,7 +200,7 @@ class PostRepositoryImplTest {
     @Test
     @DisplayName("Должен вернуть список тегов для поста")
     void shouldReturnTagsForPost() {
-        when(jdbcTemplate.query(GET_TAGS_FOR_POST, (RowMapper<String>) any(), eq(POST_ID)))
+        when(jdbcTemplate.query(eq(GET_TAGS_FOR_POST), (RowMapper<String>) any(), eq(POST_ID)))
                 .thenReturn(List.of("tagX", "tagY"));
 
         List<String> tags = postRepository.getTagsForPost(POST_ID);
@@ -205,13 +208,13 @@ class PostRepositoryImplTest {
         assertEquals(2, tags.size());
         assertTrue(tags.containsAll(List.of("tagX", "tagY")));
 
-        verify(jdbcTemplate).query(GET_TAGS_FOR_POST, any(RowMapper.class), eq(POST_ID));
+        verify(jdbcTemplate).query(eq(GET_TAGS_FOR_POST), any(RowMapper.class), eq(POST_ID));
     }
 
     @Test
     @DisplayName("Должен вернуть пустой список тегов при исключении")
     void shouldReturnEmptyTagsListOnException() {
-        when(jdbcTemplate.query(GET_TAGS_FOR_POST, (RowMapper<String>) any(), eq(POST_ID)))
+        when(jdbcTemplate.query(eq(GET_TAGS_FOR_POST), (RowMapper<String>) any(), eq(POST_ID)))
                 .thenThrow(RuntimeException.class);
 
         List<String> tags = postRepository.getTagsForPost(POST_ID);
@@ -219,7 +222,7 @@ class PostRepositoryImplTest {
         assertNotNull(tags);
         assertTrue(tags.isEmpty());
 
-        verify(jdbcTemplate).query(GET_TAGS_FOR_POST, any(RowMapper.class), eq(POST_ID));
+        verify(jdbcTemplate).query(eq(GET_TAGS_FOR_POST), any(RowMapper.class), eq(POST_ID));
     }
 
     @Test

@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 /**
  * Тесты обработки удаления постов.
  */
+@DisplayName("Тесты метода deletePost для обработки удаления постов.")
 class PostControllerDeletePostTest extends PostControllerTestBase {
 
     @DisplayName("Должен удалить пост и вернуть 200 статус")

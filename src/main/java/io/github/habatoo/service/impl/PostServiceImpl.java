@@ -109,7 +109,7 @@ public class PostServiceImpl implements PostService {
      * {@inheritDoc}
      */
     @Override
-    public PostResponse updatePost(PostRequest postRequest) {
+    public PostResponse updatePost(PostRequest postRequest) { // TODO Ошибка: Failed to execute 'append' on 'FormData': parameter 2 is not of type 'Blob'.
         try {
             PostResponse updatedPost = postRepository.updatePost(postRequest);
             postCache.put(updatedPost.id(), updatedPost);

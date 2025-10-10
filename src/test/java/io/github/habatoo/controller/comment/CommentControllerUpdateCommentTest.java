@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки редактирования комментария.
  */
+@DisplayName("Тесты метода updateComment для обработки редактирования комментария.")
 class CommentControllerUpdateCommentTest extends CommentControllerTestBase {
 
     @DisplayName("Должен обновить комментарий и вернуть 200 статус")

@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * Использует Standalone Setup с @BeforeAll для однократной инициализации
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@DisplayName("PostController Tests with Cached MockMvc")
+@DisplayName("Тесты unit уровня методов контроллера PostController с использованием Cached MockMvc.")
 class PostControllerCachedTest {
 
     private MockMvc mockMvc;

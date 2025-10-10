@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Тесты для приватного метода isJpeg
  */
+@DisplayName("Тесты метода isJpeg")
 class ImageContentTypeDetectorIsJpegTest extends ImageContentTypeDetectorTestBase {
 
     @DisplayName("Должен вернуть true для валидных JPEG сигнатур")

@@ -36,6 +36,18 @@ public class PostRepositoryImpl implements PostRepository {
             RETURNING id, title, text, likes_count, comments_count
             """;
 
+    private static final String INSERT_INTO_TAG = """
+            INSERT INTO tag (name)
+            VALUES (?)
+            ON CONFLICT (name) DO NOTHING
+            """;
+
+    private static final String INSERT_INTO_POST_TAG = """
+            INSERT INTO post_tag (post_id, tag_id)
+            VALUES (?, (SELECT id FROM tag WHERE name = ?))
+            ON CONFLICT DO NOTHING
+            """;
+
     private static final String UPDATE_POST = """
             UPDATE post
             SET title = ?, text = ?, updated_at = ?
@@ -95,14 +107,7 @@ public class PostRepositoryImpl implements PostRepository {
         LocalDateTime now = LocalDateTime.now();
         PostResponse post = jdbcTemplate.queryForObject(
                 CREATE_POST,
-                (rs, rowNum) -> new PostResponse(
-                        rs.getLong("id"),
-                        rs.getString("title"),
-                        rs.getString("text"),
-                        List.of(), // пока пусто, заполним позже
-                        rs.getInt("likes_count"),
-                        rs.getInt("comments_count")
-                ),
+                postListRowMapper,
                 postCreateRequest.title(),
                 postCreateRequest.text(),
                 Timestamp.valueOf(now),
@@ -110,13 +115,25 @@ public class PostRepositoryImpl implements PostRepository {
         );
 
         long postId = post.id();
-        for (String tag : postCreateRequest.tags()) {
-            jdbcTemplate.update("INSERT INTO tag (name) VALUES (?) ON CONFLICT (name) DO NOTHING", tag);
-            Long tagId = jdbcTemplate.queryForObject("SELECT id FROM tag WHERE name = ?", Long.class, tag); // TODO
-            jdbcTemplate.update("INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?) ON CONFLICT DO NOTHING", postId, tagId);
+        List<String> tags = postCreateRequest.tags();
+        if (!tags.isEmpty()) {
+            jdbcTemplate.batchUpdate(
+                    INSERT_INTO_TAG,
+                    tags, tags.size(),
+                    (ps, tag) -> ps.setString(1, tag)
+            );
+
+            jdbcTemplate.batchUpdate(
+                    INSERT_INTO_POST_TAG,
+                    tags,
+                    tags.size(),
+                    (ps, tag) -> {
+                        ps.setLong(1, postId);
+                        ps.setString(2, tag);
+                    }
+            );
         }
 
-        List<String> tags = getTagsForPost(postId);
         return new PostResponse(
                 postId, post.title(), post.text(), tags,
                 post.likesCount(), post.commentsCount()
@@ -130,14 +147,7 @@ public class PostRepositoryImpl implements PostRepository {
     public PostResponse updatePost(PostRequest postRequest) {
         return jdbcTemplate.queryForObject(
                 UPDATE_POST,
-                (rs, rowNum) -> new PostResponse(
-                        rs.getLong("id"),
-                        rs.getString("title"),
-                        rs.getString("text"),
-                        getTagsForPost(rs.getLong("id")),
-                        rs.getInt("likes_count"),
-                        rs.getInt("comments_count")
-                ),
+                postListRowMapper,
                 postRequest.title(),
                 postRequest.text(),
                 Timestamp.valueOf(LocalDateTime.now()),

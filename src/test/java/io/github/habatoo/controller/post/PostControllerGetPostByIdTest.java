@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки получения поста по id.
  */
+@DisplayName("Тесты метода getPostById для обработки получения поста по id.")
 class PostControllerGetPostByIdTest extends PostControllerTestBase {
 
     @DisplayName("Должен вернуть пост когда он существует")

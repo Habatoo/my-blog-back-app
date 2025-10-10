@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки создания комментария.
  */
+@DisplayName("Тесты метода createComment для обработки создания комментария.")
 class CommentControllerCreateCommentTest extends CommentControllerTestBase {
 
     @DisplayName("Должен создать комментарий и вернуть 201 статус")

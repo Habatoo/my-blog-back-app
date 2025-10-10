@@ -15,6 +15,7 @@ import static org.mockito.Mockito.*;
 /**
  * Тесты обработки удаления комментария.
  */
+@DisplayName("Тесты метода deleteComment для обработки удаления комментария.")
 class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
 
     @DisplayName("Должен удалить комментарий и вернуть 200 статус")

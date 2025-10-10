@@ -14,6 +14,7 @@ import static org.mockito.Mockito.doNothing;
 /**
  * Тесты для обновления изображения поста.
  */
+@DisplayName("Тесты метода updatePostImage для обновления изображения поста.")
 class ImageControllerUpdatePostImageTest extends ImageControllerTestBase {
 
     @DisplayName("Должен обновить изображение поста и вернуть 200 статус")

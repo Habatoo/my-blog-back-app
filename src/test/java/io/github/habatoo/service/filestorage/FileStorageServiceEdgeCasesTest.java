@@ -20,11 +20,14 @@ import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
  * Тесты для метода saveImageFile.
  */
+@DisplayName("Тесты метода saveImageFile")
 class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
 
     @DisplayName("Должен автоматически создавать upload директорию при включенной опции")
@@ -62,7 +65,7 @@ class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
         String longFilename = "a".repeat(100) + ".jpg";
         String generatedName = "12345_6789.jpg";
         byte[] content = "content".getBytes();
-        MultipartFile file = createMockMultipartFile(longFilename, content);
+        MultipartFile file = getFile(longFilename, content);
         Path postDir = baseUploadPath.resolve(VALID_POST_ID.toString());
         Path filePath = postDir.resolve(generatedName);
 
@@ -81,7 +84,7 @@ class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
         String specialFilename = "file with spaces and (special) chars.jpg";
         String generatedName = "12345_6789.jpg";
         byte[] content = "content".getBytes();
-        MultipartFile file = createMockMultipartFile(specialFilename, content);
+        MultipartFile file = getFile(specialFilename, content);
         Path postDir = baseUploadPath.resolve(VALID_POST_ID.toString());
         Path filePath = postDir.resolve(generatedName);
 
@@ -100,18 +103,29 @@ class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
         ExecutorService executor = Executors.newFixedThreadPool(3);
         List<Callable<String>> tasks = new ArrayList<>();
 
-        for (int i = 0; i < 3; i++) {
+        // Генерирует уникальное имя файла на основе входного имени, например: "image2.jpg" -> "12345_2.jpg"
+        when(fileNameGenerator.generateFileName(anyString()))
+                .thenAnswer(invocation -> {
+                    String original = invocation.getArgument(0);
+                    // Извлекаем числовой индекс из имени файла "imageX.jpg"
+                    String index = original.replace("image", "").replace(".jpg", "");
+                    return "12345_" + index + ".jpg";
+                });
+
+        // Возвращает путь к файлу в папке поста
+        when(pathResolver.resolveFilePath(any(Path.class), anyString()))
+                .thenAnswer(invocation ->
+                        ((Path) invocation.getArgument(0))
+                                .resolve((String) invocation.getArgument(1))
+                );
+
+
+        for (int i = 0; i < 5; i++) {
             final int index = i;
             tasks.add(() -> {
                 String filename = "image" + index + ".jpg";
-                String generatedName = "12345_" + index + ".jpg";
                 byte[] content = ("content" + index).getBytes();
                 MultipartFile file = createMockMultipartFile(filename, content);
-                Path postDir = baseUploadPath.resolve(VALID_POST_ID.toString());
-                Path filePath = postDir.resolve(generatedName);
-
-                when(fileNameGenerator.generateFileName(filename)).thenReturn(generatedName);
-                when(pathResolver.resolveFilePath(postDir, generatedName)).thenReturn(filePath);
 
                 return fileStorageService.saveImageFile(VALID_POST_ID, file);
             });

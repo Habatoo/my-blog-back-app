@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Тесты для метода detect
  */
+@DisplayName("Тесты метода detect")
 class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBase {
 
     @DisplayName("Должен определить JPEG формат для валидных данных")

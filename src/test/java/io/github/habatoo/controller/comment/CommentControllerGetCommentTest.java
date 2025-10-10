@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки получения комментария по id.
  */
+@DisplayName("Тесты метода getCommentByPostIdAndId в CommentController")
 class CommentControllerGetCommentTest extends CommentControllerTestBase {
 
     @DisplayName("Должен вернуть комментарий когда он существует")

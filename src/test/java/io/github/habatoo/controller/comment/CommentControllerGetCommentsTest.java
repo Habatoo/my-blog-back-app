@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 /**
  * Тесты обработки получения списка комментариев.
  */
+@DisplayName("Тесты метода getCommentsByPostId для получения списка комментариев.")
 class CommentControllerGetCommentsTest extends CommentControllerTestBase {
 
     @DisplayName("Должен вернуть список комментариев для существующего поста")

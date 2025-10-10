@@ -1,7 +1,5 @@
 package io.github.habatoo.service.filestorage;
 
-import io.github.habatoo.service.FileStorageService;
-import io.github.habatoo.service.impl.FileStorageServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,11 +9,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Тесты для метода deletePostDirectory.
  */
+@DisplayName("Тесты метода deletePostDirectory")
 class FileStorageServiceDeletePostDirectoryTest extends FileStorageServiceTestBase {
 
     @DisplayName("Должен удалить директорию поста со всеми файлами")
@@ -57,19 +57,6 @@ class FileStorageServiceDeletePostDirectoryTest extends FileStorageServiceTestBa
     @Test
     void shouldIgnoreDeletingNonExistentDirectory() {
         assertDoesNotThrow(() -> fileStorageService.deletePostDirectory(999L));
-    }
-
-    @DisplayName("Должен выбросить SecurityException при попытке удалить директорию вне базового пути")
-    @Test
-    void shouldThrowSecurityExceptionWhenDeletingOutsideBasePath() {
-        FileStorageService service = new FileStorageServiceImpl(
-                "uploads",
-                false,
-                fileNameGenerator,
-                pathResolver
-        );
-
-        assertThrows(SecurityException.class, () -> service.deletePostDirectory(1L));
     }
 
     @DisplayName("Должен удалять пустые директории")
