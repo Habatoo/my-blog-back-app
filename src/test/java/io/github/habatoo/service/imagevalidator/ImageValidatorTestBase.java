@@ -6,6 +6,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+/**
+ * Базовый класс для тестирования ImageValidatorImpl.
+ */
 @ExtendWith(MockitoExtension.class)
 abstract class ImageValidatorTestBase {
 

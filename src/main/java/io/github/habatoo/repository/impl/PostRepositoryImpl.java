@@ -93,13 +93,13 @@ public class PostRepositoryImpl implements PostRepository {
     @Override
     public PostResponse createPost(PostCreateRequest postCreateRequest) {
         LocalDateTime now = LocalDateTime.now();
-        return jdbcTemplate.queryForObject(
+        PostResponse post = jdbcTemplate.queryForObject(
                 CREATE_POST,
                 (rs, rowNum) -> new PostResponse(
                         rs.getLong("id"),
                         rs.getString("title"),
                         rs.getString("text"),
-                        getTagsForPost(rs.getLong("id")),
+                        List.of(), // пока пусто, заполним позже
                         rs.getInt("likes_count"),
                         rs.getInt("comments_count")
                 ),
@@ -107,6 +107,19 @@ public class PostRepositoryImpl implements PostRepository {
                 postCreateRequest.text(),
                 Timestamp.valueOf(now),
                 Timestamp.valueOf(now)
+        );
+
+        long postId = post.id();
+        for (String tag : postCreateRequest.tags()) {
+            jdbcTemplate.update("INSERT INTO tag (name) VALUES (?) ON CONFLICT (name) DO NOTHING", tag);
+            Long tagId = jdbcTemplate.queryForObject("SELECT id FROM tag WHERE name = ?", Long.class, tag); // TODO
+            jdbcTemplate.update("INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?) ON CONFLICT DO NOTHING", postId, tagId);
+        }
+
+        List<String> tags = getTagsForPost(postId);
+        return new PostResponse(
+                postId, post.title(), post.text(), tags,
+                post.likesCount(), post.commentsCount()
         );
     }
 

@@ -1,21 +1,13 @@
 package io.github.habatoo.service.imagecontenttypedetector;
 
-import io.github.habatoo.controller.PostController;
-import io.github.habatoo.handler.GlobalExceptionHandler;
 import io.github.habatoo.service.ImageContentTypeDetector;
-import io.github.habatoo.service.PostService;
 import io.github.habatoo.service.impl.ImageContentTypeDetectorImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.junit.jupiter.params.provider.Arguments;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.stream.Stream;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * Базовый класс для тестирования ImageContentTypeDetectorImpl

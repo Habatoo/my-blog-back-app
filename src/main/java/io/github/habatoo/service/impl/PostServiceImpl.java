@@ -210,5 +210,4 @@ public class PostServiceImpl implements PostService {
     public boolean postExists(Long postId) {
         return postCache.containsKey(postId);
     }
-
 }

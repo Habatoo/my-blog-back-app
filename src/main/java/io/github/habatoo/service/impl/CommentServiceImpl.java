@@ -4,6 +4,7 @@ import io.github.habatoo.dto.request.CommentCreateRequest;
 import io.github.habatoo.dto.response.CommentResponse;
 import io.github.habatoo.repository.CommentRepository;
 import io.github.habatoo.service.CommentService;
+import io.github.habatoo.service.PostService;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,10 +30,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-    private final PostServiceImpl postService;
+    private final PostService postService;
     private final Map<Long, CopyOnWriteArrayList<CommentResponse>> commentsCache = new ConcurrentHashMap<>();
 
-    public CommentServiceImpl(CommentRepository commentRepository, PostServiceImpl postService) {
+    public CommentServiceImpl(CommentRepository commentRepository, PostService postService) {
         this.commentRepository = commentRepository;
         this.postService = postService;
     }
