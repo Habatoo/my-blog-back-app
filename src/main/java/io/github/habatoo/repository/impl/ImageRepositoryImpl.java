@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import static io.github.habatoo.repository.sql.ImageSqlQueries.*;
+
 /**
  * Реализация репозитория для работы с метаданными изображений постов.
  *
@@ -18,24 +20,6 @@ import java.util.Optional;
 public class ImageRepositoryImpl implements ImageRepository {
 
     private final JdbcTemplate jdbcTemplate;
-
-    private static final String GET_IMAGE_FILE_NAME = """
-            SELECT image_url
-            FROM post
-            WHERE id = ?
-            """;
-
-    private static final String UPDATE_POST_IMAGE = """
-            UPDATE post
-            SET image_name = ?, image_size = ?, image_url = ?
-            WHERE id = ?
-            """;
-
-    private static final String CHECK_POST_EXISTS = """
-            SELECT COUNT(1)
-            FROM post
-            WHERE id = ?
-            """;
 
     public ImageRepositoryImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

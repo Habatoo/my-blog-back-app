@@ -3,6 +3,7 @@ package io.github.habatoo.service.imageservice;
 import io.github.habatoo.service.dto.ImageResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -12,14 +13,28 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Тесты метода getPostImage класса ImageServiceImpl
+ * Тесты метода getPostImage класса ImageServiceImpl.
+ *
+ * <p>
+ * Охват тестов:
+ * <ul>
+ *   <li>Проверка кеширования изображений после updatePostImage и возврата их из кеша</li>
+ *   <li>Загрузка и кеширование изображений при их отсутствии в кеше</li>
+ *   <li>Обработка ошибок: отсутствие поста, отсутствие изображения, ошибка загрузки файла</li>
+ *   <li>Ветвление обновления изображения: случай отсутствия старого файла</li>
+ * </ul>
+ * </p>
  */
 @DisplayName("Тесты метода getPostImage")
 class ImageServiceGetPostImageTest extends ImageServiceTestBase {
 
+    /**
+     * Проверяет, что изображение сохраняется через updatePostImage, кэшируется,
+     * и оба публичных вызова getPostImage возвращают одно и то же (то же по ссылке) изображение из кеша.
+     */
     @Test
     @DisplayName("Должен сохранить изображение через updatePostImage и вернуть его через getPostImage (проверка кэша по публичным методам)")
-    void shouldCacheImageAfterUpdateAndReturnCachedImage() throws IOException {
+    void shouldCacheImageAfterUpdateAndReturnCachedImageTest() throws IOException {
         MultipartFile imageFile = createMultipartFile(false, ORIGINAL_FILENAME, IMAGE_SIZE);
 
         doNothing().when(imageValidator).validatePostId(VALID_POST_ID);
@@ -48,10 +63,13 @@ class ImageServiceGetPostImageTest extends ImageServiceTestBase {
         verify(fileStorageService).deleteImageFile(IMAGE_FILENAME);
     }
 
-
+    /**
+     * Проверяет, что при отсутствии изображения в кеше getPostImage загружает его с диска,
+     * определяет mediaType и кладёт в кеш для последующих вызовов.
+     */
     @Test
     @DisplayName("Должен загрузить изображение из файловой системы и кэшировать его при отсутствии в кэше")
-    void shouldLoadImageFromFileAndCache() throws IOException {
+    void shouldLoadImageFromFileAndCacheTest() throws IOException {
         ImageResponse expectedResponse = new ImageResponse(IMAGE_DATA, MEDIA_TYPE);
 
         doNothing().when(imageValidator).validatePostId(VALID_POST_ID);
@@ -72,9 +90,12 @@ class ImageServiceGetPostImageTest extends ImageServiceTestBase {
         verify(contentTypeDetector).detect(IMAGE_DATA);
     }
 
+    /**
+     * Проверяет, что при отсутствии поста вызывается и выбрасывается IllegalStateException с корректным сообщением.
+     */
     @Test
     @DisplayName("Должен выбросить исключение при отсутствии поста")
-    void shouldThrowIfPostNotFound() {
+    void shouldThrowIfPostNotFoundTest() {
         doNothing().when(imageValidator).validatePostId(INVALID_POST_ID);
         when(imageRepository.existsPostById(INVALID_POST_ID)).thenReturn(false);
 
@@ -87,9 +108,12 @@ class ImageServiceGetPostImageTest extends ImageServiceTestBase {
         verifyNoInteractions(fileStorageService);
     }
 
+    /**
+     * Проверяет, что при отсутствии изображения для существующего поста выбрасывается IllegalStateException.
+     */
     @Test
     @DisplayName("Должен выбросить исключение при отсутствии изображения для поста")
-    void shouldThrowIfImageNotFound() {
+    void shouldThrowIfImageNotFoundTest() {
         doNothing().when(imageValidator).validatePostId(VALID_POST_ID);
         when(imageRepository.existsPostById(VALID_POST_ID)).thenReturn(true);
         when(imageRepository.findImageFileNameByPostId(VALID_POST_ID)).thenReturn(Optional.empty());
@@ -104,9 +128,12 @@ class ImageServiceGetPostImageTest extends ImageServiceTestBase {
         verifyNoInteractions(fileStorageService);
     }
 
+    /**
+     * Проверяет, что при ошибке чтения файла (например, IOException) выбрасывается IllegalStateException с корректным сообщением.
+     */
     @Test
     @DisplayName("Должен выбросить исключение при ошибке загрузки файла")
-    void shouldThrowWhenIOExceptionDuringLoad() throws IOException {
+    void shouldThrowWhenIOExceptionDuringLoadTest() throws IOException {
         doNothing().when(imageValidator).validatePostId(VALID_POST_ID);
         when(imageRepository.existsPostById(VALID_POST_ID)).thenReturn(true);
         when(imageRepository.findImageFileNameByPostId(VALID_POST_ID)).thenReturn(Optional.of(IMAGE_FILENAME));
@@ -120,6 +147,30 @@ class ImageServiceGetPostImageTest extends ImageServiceTestBase {
         verify(imageRepository).existsPostById(VALID_POST_ID);
         verify(imageRepository).findImageFileNameByPostId(VALID_POST_ID);
         verify(fileStorageService).loadImageFile(IMAGE_FILENAME);
+    }
+
+    /**
+     * Проверяет, что если у поста не было старого файла, метод удаления файла не вызывается при updatePostImage.
+     */
+    @Test
+    @DisplayName("Не должен вызывать удаление файла, если старого файла нет")
+    void shouldNotCallDeleteIfOldFileIsNull() throws IOException {
+        MultipartFile imageFile = createMultipartFile(false, ORIGINAL_FILENAME, IMAGE_SIZE);
+
+        when(imageRepository.existsPostById(VALID_POST_ID)).thenReturn(true);
+        when(imageRepository.findImageFileNameByPostId(VALID_POST_ID)).thenReturn(Optional.empty());
+        when(fileStorageService.saveImageFile(eq(VALID_POST_ID), eq(imageFile))).thenReturn("newfile.jpg");
+        when(imageFile.getOriginalFilename()).thenReturn("orig.jpg");
+        when(imageFile.getSize()).thenReturn(123L);
+        byte[] imageData = new byte[]{1, 2, 3};
+        when(fileStorageService.loadImageFile("newfile.jpg")).thenReturn(imageData);
+        when(contentTypeDetector.detect(imageData)).thenReturn(MediaType.IMAGE_JPEG);
+
+        imageService.updatePostImage(VALID_POST_ID, imageFile);
+
+        verify(fileStorageService, never()).deleteImageFile(anyString());
+        verify(fileStorageService).saveImageFile(VALID_POST_ID, imageFile);
+        verify(imageRepository).updateImageMetadata(eq(VALID_POST_ID), eq("newfile.jpg"), eq("orig.jpg"), eq(123L));
     }
 }
 

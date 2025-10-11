@@ -27,8 +27,22 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Тесты для PostController с максимальным кешированием MockMvc
- * Использует Standalone Setup с @BeforeAll для однократной инициализации
+ * <h2>Тесты для PostController с максимальным кешированием MockMvc</h2>
+ *
+ * <p>
+ * Класс содержит изолированные unit-тесты для основных REST-методов контроллера PostController
+ * с использованием Standalone MockMvc и максимальным кешированием:
+ * <ul>
+ *   <li>Проверка работы поиска, создания, обновления и удаления постов</li>
+ *   <li>Проверка правильной обработки всех статусов и ошибок (404, 400, 500 и др.)</li>
+ *   <li>Проверка поддержки пагинации, валидации данных и всех CRUD операций</li>
+ *   <li>Проверяются сценарии работы как с валидными, так и с невалидными входными данными</li>
+ * </ul>
+ * Тестовые данные и MockMvc инициализируются однократно в @BeforeAll.<br>
+ * Используется только мок-сервисный слой PostService, что исключает возможное влияние инфраструктуры.
+ * Подключён глобальный обработчик ошибок для симуляции рабочих сценариев.
+ * Каждый тест сверяет статус ответа, содержимое результативных объектов и факт вызова бизнес-логики.
+ * </p>
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Тесты unit уровня методов контроллера PostController с использованием Cached MockMvc.")
@@ -82,7 +96,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts - должен вернуть список постов с пагинацией")
-    void getPosts_WithValidParams_ShouldReturnPostList() throws Exception {
+    void getPostsWithValidParamsTest() throws Exception {
         String search = "технологии";
         int pageNumber = 1;
         int pageSize = 10;
@@ -115,7 +129,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts - должен вернуть пустой список")
-    void getPosts_WithNoPosts_ShouldReturnEmptyList() throws Exception {
+    void getPostsWithNoPostsTest() throws Exception {
         String search = "несуществующий запрос";
         int pageNumber = 1;
         int pageSize = 10;
@@ -144,7 +158,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{id} - должен вернуть пост")
-    void getPostById_WithValidId_ShouldReturnPost() throws Exception {
+    void getPostByIdWithValidIdTest() throws Exception {
         Long postId = 1L;
         when(postService.getPostById(postId))
                 .thenReturn(Optional.of(mockPost1));
@@ -170,7 +184,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{id} - должен вернуть 404 для несуществующего поста")
-    void getPostById_WithNonExistentPost_ShouldReturnNotFound() throws Exception {
+    void getPostByIdWithNonExistentPostTest() throws Exception {
         Long postId = 999L;
         when(postService.getPostById(postId))
                 .thenReturn(Optional.empty());
@@ -187,7 +201,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("POST /api/posts - должен создать пост")
-    void createPost_WithValidRequest_ShouldReturnCreated() throws Exception {
+    void createPostWithValidRequestTest() throws Exception {
         when(postService.createPost(any(PostCreateRequest.class)))
                 .thenReturn(mockPost1);
 
@@ -213,7 +227,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("POST /api/posts - должен вернуть ошибку для невалидных данных")
-    void createPost_WithInvalidData_ShouldReturnBadRequest() throws Exception {
+    void createPostWithInvalidDataTest() throws Exception {
         when(postService.createPost(any(PostCreateRequest.class)))
                 .thenThrow(new IllegalArgumentException("Invalid post data"));
 
@@ -230,10 +244,10 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("PUT /api/posts/{id} - должен обновить пост")
-    void updatePost_WithValidRequest_ShouldReturnUpdatedPost() throws Exception {
+    void updatePostWithValidRequestTest() throws Exception {
         Long postId = 1L;
         PostResponse updatedPost = new PostResponse(postId, "Обновленный пост",
-                "Обновленный текст", Arrays.asList("обновление"), 10, 5);
+                "Обновленный текст", List.of("обновление"), 10, 5);
 
         when(postService.updatePost(any(PostRequest.class)))
                 .thenReturn(updatedPost);
@@ -259,7 +273,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("PUT /api/posts/{id} - должен вернуть ошибку для несуществующего поста")
-    void updatePost_WithNonExistentPost_ShouldThrowException() throws Exception {
+    void updatePostWithNonExistentPostTest() throws Exception {
         Long postId = 999L;
         when(postService.updatePost(any(PostRequest.class)))
                 .thenThrow(new org.springframework.dao.EmptyResultDataAccessException("Post not found", 1));
@@ -277,7 +291,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("DELETE /api/posts/{id} - должен удалить пост")
-    void deletePost_WithValidId_ShouldReturnOk() throws Exception {
+    void deletePostWithValidIdTest() throws Exception {
         Long postId = 1L;
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/posts/{id}", postId)
@@ -292,7 +306,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("DELETE /api/posts/{id} - должен вернуть ошибку для несуществующего поста")
-    void deletePost_WithNonExistentPost_ShouldThrowException() throws Exception {
+    void deletePostWithNonExistentPostTest() throws Exception {
         Long postId = 999L;
         doThrow(new org.springframework.dao.EmptyResultDataAccessException("Post not found", 1))
                 .when(postService).deletePost(postId);
@@ -309,7 +323,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("POST /api/posts/{id}/likes - должен увеличить лайки")
-    void incrementLikes_WithValidId_ShouldReturnLikesCount() throws Exception {
+    void incrementLikesWithValidIdTest() throws Exception {
         Long postId = 1L;
         int expectedLikes = 11;
         when(postService.incrementLikes(postId))
@@ -331,7 +345,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("POST /api/posts/{id}/likes - должен вернуть ошибку для несуществующего поста")
-    void incrementLikes_WithNonExistentPost_ShouldThrowException() throws Exception {
+    void incrementLikesWithNonExistentPostTest() throws Exception {
         Long postId = 999L;
         when(postService.incrementLikes(postId))
                 .thenThrow(new org.springframework.dao.EmptyResultDataAccessException("Post not found", 1));
@@ -348,7 +362,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts - должен вернуть 500 при ошибке БД")
-    void getPosts_WithDataAccessError_ShouldReturnInternalServerError() throws Exception {
+    void getPostsWithDataAccessErrorTest() throws Exception {
         String search = "технологии";
         int pageNumber = 1;
         int pageSize = 10;
@@ -372,7 +386,7 @@ class PostControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts - должен работать с разными параметрами пагинации")
-    void getPosts_WithDifferentPaginationParams_ShouldWorkCorrectly() throws Exception {
+    void getPostsWithDifferentPaginationParamsTest() throws Exception {
         Object[][] testCases = {
                 {"запрос1", 1, 10},
                 {"java", 2, 5},

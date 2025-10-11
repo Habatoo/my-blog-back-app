@@ -20,8 +20,21 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 /**
- * Тесты для ImageController с максимальным кешированием MockMvc
- * Использует Standalone Setup с @BeforeAll для однократной инициализации
+ * <h2>Тесты для ImageController с максимальным кешированием MockMvc</h2>
+ *
+ * <p>
+ * Класс содержит unit-тесты для всех основных HTTP-методов контроллера ImageController:
+ * <ul>
+ *   <li>Обновление изображения поста (<code>PUT /api/posts/{postId}/image</code>), включая проверки для успешных, несуществующих и невалидных файлов</li>
+ *   <li>Получение изображения поста (<code>GET /api/posts/{postId}/image</code>) с поддержкой разных типов, проверками на отсутствие или ошибки доступа</li>
+ * </ul>
+ * <br>
+ * Для максимальной производительности и repeatability используется Standalone MockMvc с однократной инициализацией через @BeforeAll.<br>
+ * Обработчик ошибок подключён вручную.<br>
+ * Сервисный слой <code>ImageService</code> мокируется, исключая влияние инфраструктуры и обеспечивая быстрые unit-проверки только уровня контроллера.
+ * <br>
+ * Каждый тест убеждается в правильном http-статусе, формате ответа и корректности сервисного вызова.
+ * </p>
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Тесты unit уровня методов контроллера ImageController с использованием Cached MockMvc.")
@@ -71,7 +84,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("PUT /api/posts/{postId}/image - должен обновить изображение поста")
-    void updatePostImage_WithValidImage_ShouldReturnOk() throws Exception {
+    void updatePostImageWithValidImageTest() throws Exception {
         Long postId = 1L;
 
         mockMvc.perform(MockMvcRequestBuilders.multipart("/api/posts/{postId}/image", postId)
@@ -90,7 +103,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("PUT /api/posts/{postId}/image - должен вернуть ошибку для несуществующего поста")
-    void updatePostImage_WithNonExistentPost_ShouldThrowException() throws Exception {
+    void updatePostImageWithNonExistentPostTest() throws Exception {
         Long postId = 999L;
         doThrow(new org.springframework.dao.EmptyResultDataAccessException("Post not found", 1))
                 .when(imageService).updatePostImage(anyLong(), any());
@@ -111,7 +124,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("PUT /api/posts/{postId}/image - должен вернуть ошибку для невалидного файла")
-    void updatePostImage_WithInvalidFile_ShouldReturnBadRequest() throws Exception {
+    void updatePostImageWithInvalidFileTest() throws Exception {
         Long postId = 1L;
         doThrow(new IllegalArgumentException("Invalid image file"))
                 .when(imageService).updatePostImage(anyLong(), any());
@@ -132,7 +145,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/image - должен вернуть изображение")
-    void getPostImage_WithValidPostId_ShouldReturnImage() throws Exception {
+    void getPostImageWithValidPostIdTest() throws Exception {
         Long postId = 1L;
         when(imageService.getPostImage(postId)).thenReturn(mockImageResponse);
 
@@ -152,7 +165,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/image - должен вернуть 404 для несуществующего поста")
-    void getPostImage_WithNonExistentPost_ShouldReturnNotFound() throws Exception {
+    void getPostImageWithNonExistentPostTest() throws Exception {
         Long postId = 999L;
         when(imageService.getPostImage(postId))
                 .thenThrow(new org.springframework.dao.EmptyResultDataAccessException("Post not found", 1));
@@ -168,7 +181,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/image - должен вернуть 404 если изображение не найдено")
-    void getPostImage_WithNoImage_ShouldReturnNotFound() throws Exception {
+    void getPostImageWithNoImageTest() throws Exception {
         Long postId = 2L;
         when(imageService.getPostImage(postId))
                 .thenThrow(new org.springframework.dao.EmptyResultDataAccessException("Image not found", 1));
@@ -184,7 +197,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/image - должен работать с разными типами изображений")
-    void getPostImage_WithDifferentImageTypes_ShouldWorkCorrectly() throws Exception {
+    void getPostImageWithDifferentImageTypesTest() throws Exception {
         Long[] postIds = {1L, 2L, 3L};
         MediaType[] mediaTypes = {
                 MediaType.IMAGE_JPEG,
@@ -223,7 +236,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/image - должен вернуть 500 при ошибке БД")
-    void getPostImage_WithDataAccessError_ShouldReturnInternalServerError() throws Exception {
+    void getPostImageWithDataAccessErrorTest() throws Exception {
         Long postId = 1L;
         when(imageService.getPostImage(postId))
                 .thenThrow(new org.springframework.dao.DataAccessException("Database error") {
@@ -240,7 +253,7 @@ class ImageControllerCachedTest {
      */
     @Test
     @DisplayName("PUT /api/posts/{postId}/image - должен вернуть ошибку для пустого файла")
-    void updatePostImage_WithEmptyFile_ShouldReturnBadRequest() throws Exception {
+    void updatePostImageWithEmptyFileTest() throws Exception {
         Long postId = 1L;
         MockMultipartFile emptyFile = new MockMultipartFile(
                 "image",

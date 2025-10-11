@@ -21,7 +21,7 @@ class CommentControllerCreateCommentTest extends CommentControllerTestBase {
 
     @DisplayName("Должен создать комментарий и вернуть 201 статус")
     @Test
-    void shouldCreateCommentAndReturnCreatedStatus() {
+    void shouldCreateCommentAndReturnCreatedStatusTest() {
         CommentCreateRequest createRequest = createCommentCreateRequest(COMMENT_TEXT, VALID_POST_ID);
         CommentResponse expectedResponse = createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, COMMENT_TEXT);
 
@@ -43,7 +43,7 @@ class CommentControllerCreateCommentTest extends CommentControllerTestBase {
             "Текст с цифрами 1234567890",
             "   Текст с пробелами   "
     })
-    void shouldCreateCommentWithDifferentTexts(String text) {
+    void shouldCreateCommentWithDifferentTextsTest(String text) {
         CommentCreateRequest createRequest = createCommentCreateRequest(text, VALID_POST_ID);
         CommentResponse expectedResponse = createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, text);
 
@@ -59,7 +59,7 @@ class CommentControllerCreateCommentTest extends CommentControllerTestBase {
     @DisplayName("Должен создать комментарий для различных постов")
     @ParameterizedTest
     @ValueSource(longs = {1L, 10L, 100L, 1000L})
-    void shouldCreateCommentForDifferentPosts(Long postId) {
+    void shouldCreateCommentForDifferentPostsTest(Long postId) {
         CommentCreateRequest createRequest = createCommentCreateRequest(COMMENT_TEXT, postId);
         CommentResponse expectedResponse = createCommentResponse(VALID_COMMENT_ID, postId, COMMENT_TEXT);
 

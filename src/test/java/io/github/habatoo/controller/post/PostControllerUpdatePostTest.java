@@ -21,9 +21,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода updatePost для обработки редактирования постов.")
 class PostControllerUpdatePostTest extends PostControllerTestBase {
 
-    @DisplayName("Должен обновить пост и вернуть 200 статус")
     @Test
-    void shouldUpdatePostAndReturnOkStatus() {
+    @DisplayName("Должен обновить пост и вернуть 200 статус")
+    void shouldUpdatePostAndReturnOkStatusTest() {
         PostRequest updateRequest = createPostRequest(VALID_POST_ID, "Новый заголовок",
                 "Новый текст", List.of("newTag"));
         PostResponse expectedResponse = createPostResponse(VALID_POST_ID, "Новый заголовок",
@@ -45,7 +45,7 @@ class PostControllerUpdatePostTest extends PostControllerTestBase {
             "2, 'Другой заголовок', 'Длинный текст поста', ''",
             "3, 'Короткий', 'Текст', 'единственный тег'"
     })
-    void shouldUpdatePostWithDifferentData(Long postId, String title, String text, String tags) {
+    void shouldUpdatePostWithDifferentDataTest(Long postId, String title, String text, String tags) {
         List<String> tagList = tags.isEmpty() ? List.of() : List.of(tags.split(","));
         PostRequest updateRequest = createPostRequest(postId, title, text, tagList);
         PostResponse expectedResponse = createPostResponse(postId, title, text, tagList, 0, 0);

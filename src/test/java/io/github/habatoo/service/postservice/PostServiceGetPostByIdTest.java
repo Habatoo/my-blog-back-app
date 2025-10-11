@@ -17,7 +17,7 @@ class PostServiceGetPostByIdTest extends PostServiceTestBase {
 
     @Test
     @DisplayName("Должен вернуть пост из кеша, если он существует")
-    void shouldReturnPostIfExists() {
+    void shouldReturnPostIfExistsTest() {
         Optional<PostResponse> result = postService.getPostById(VALID_POST_ID);
 
         assertTrue(result.isPresent());
@@ -26,7 +26,7 @@ class PostServiceGetPostByIdTest extends PostServiceTestBase {
 
     @Test
     @DisplayName("Должен вернуть пустой Optional если пост отсутствует")
-    void shouldReturnEmptyIfPostNotExists() {
+    void shouldReturnEmptyIfPostNotExistsTest() {
         Optional<PostResponse> result = postService.getPostById(INVALID_POST_ID);
         assertTrue(result.isEmpty());
     }

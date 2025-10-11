@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.provider.Arguments;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 
 import java.util.stream.Stream;
 
@@ -88,6 +89,40 @@ public abstract class ImageContentTypeDetectorTestBase {
                 Arguments.of(new byte[3]), // минимальная длина для JPEG
                 Arguments.of(new byte[7]), // почти PNG (8 байт нужно)
                 Arguments.of(new byte[8])  // минимальная длина для PNG
+        );
+    }
+
+    static Stream<Object[]> validAndInvalidJpeg() {
+        return Stream.of(
+                // data.length < 3
+                new Object[]{new byte[]{}, MediaType.APPLICATION_OCTET_STREAM, "empty array"},
+                new Object[]{new byte[]{(byte) 0xFF}, MediaType.APPLICATION_OCTET_STREAM, "one byte"},
+                new Object[]{new byte[]{(byte) 0xFF, (byte) 0xD8}, MediaType.APPLICATION_OCTET_STREAM, "two bytes"},
+                // data.length >= 3, but not JPEG signature
+                new Object[]{new byte[]{(byte) 0x00, (byte) 0x00, (byte) 0x00}, MediaType.APPLICATION_OCTET_STREAM, "wrong signature"},
+                // JPEG case
+                new Object[]{new byte[]{(byte) 0xFF, (byte) 0xD8, 0x42, 0x01}, MediaType.IMAGE_JPEG, "jpeg proper"}
+        );
+    }
+
+    static Stream<Object[]> validAndInvalidPng() {
+        return Stream.of(
+                // data.length == 0
+                new Object[]{new byte[]{}, MediaType.APPLICATION_OCTET_STREAM, "empty"},
+                // data.length < 8, случайные данные
+                new Object[]{new byte[]{1, 2, 3, 4, 5, 6, 7}, MediaType.APPLICATION_OCTET_STREAM, "random 7 bytes"},
+                // data.length == 8, но первый байт != 0x89
+                new Object[]{new byte[]{0x00, 0x50, 0, 0, 0, 0, 0, 0}, MediaType.APPLICATION_OCTET_STREAM, "first byte wrong"},
+                // data.length == 8, первый байт верный, второй байт != 0x50
+                new Object[]{new byte[]{(byte) 0x89, 0x00, 0, 0, 0, 0, 0, 0}, MediaType.APPLICATION_OCTET_STREAM, "second byte wrong"},
+                // data.length == 8, оба байта верные
+                new Object[]{new byte[]{(byte) 0x89, 0x50, 0, 0, 0, 0, 0, 0}, MediaType.IMAGE_PNG, "eight bytes, correct signature"},
+                // data.length > 8, оба байта верные
+                new Object[]{new byte[]{(byte) 0x89, 0x50, 0, 0, 0, 0, 0, 0, 0x01}, MediaType.IMAGE_PNG, "more than 8 bytes, correct signature"},
+                // data.length > 8, первый байт не верный
+                new Object[]{new byte[]{0x00, 0x50, 0, 0, 0, 0, 0, 0, 0x01}, MediaType.APPLICATION_OCTET_STREAM, "more than 8, first byte wrong"},
+                // data.length > 8, второй байт не верный
+                new Object[]{new byte[]{(byte) 0x89, 0x00, 0, 0, 0, 0, 0, 0, 0x01}, MediaType.APPLICATION_OCTET_STREAM, "more than 8, second byte wrong"}
         );
     }
 }

@@ -43,20 +43,12 @@ abstract class PostServiceTestBase {
         postService = new PostServiceImpl(postRepository, fileStorageService);
     }
 
-    static Stream<Arguments> postsForFiltering() {
-        return Stream.of(
-                Arguments.of("", 3),
-                Arguments.of("Первый", 1),
-                Arguments.of("Второй #tag2", 1),
-                Arguments.of("#tag2", 2),
-                Arguments.of("#unknowntag", 0)
-        );
-    }
-
     static Stream<Arguments> postIdProvider() {
         return Stream.of(
                 Arguments.of(VALID_POST_ID, true),
                 Arguments.of(INVALID_POST_ID, false)
         );
     }
+
+
 }

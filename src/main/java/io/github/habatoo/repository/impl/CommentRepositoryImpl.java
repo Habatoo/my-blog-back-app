@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import static io.github.habatoo.repository.sql.CommentSqlQueries.*;
+
 /**
  * Реализация репозитория для работы с комментариями блога.
  * Обеспечивает доступ к данным комментариев с использованием JDBC Template.
@@ -25,36 +27,6 @@ public class CommentRepositoryImpl implements CommentRepository {
 
     private final JdbcTemplate jdbcTemplate;
     private final CommentRowMapper commentRowMapper;
-
-    private static final String FIND_BY_POST_ID = """
-            SELECT id, text, post_id
-            FROM comment
-            WHERE post_id = ?
-            ORDER BY created_at ASC
-            """;
-
-    private static final String FIND_BY_POST_ID_AND_ID = """
-            SELECT id, text, post_id
-            FROM comment
-            WHERE post_id = ? AND id = ?
-            """;
-
-    private static final String INSERT_COMMENT = """
-            INSERT INTO comment (post_id, text, created_at, updated_at)
-            VALUES (?, ?, ?, ?)
-            RETURNING id, text, post_id
-            """;
-
-    private static final String UPDATE_COMMENT_TEXT = """
-            UPDATE comment
-            SET text = ?, updated_at = ?
-            WHERE id = ?
-            RETURNING id, text, post_id
-            """;
-
-    private static final String DELETE_COMMENT = """
-            DELETE FROM comment WHERE id = ?
-            """;
 
     public CommentRepositoryImpl(
             JdbcTemplate jdbcTemplate,
@@ -89,11 +61,7 @@ public class CommentRepositoryImpl implements CommentRepository {
 
         return jdbcTemplate.queryForObject(
                 INSERT_COMMENT,
-                (rs, rowNum) -> new CommentResponse(
-                        rs.getLong("id"),
-                        rs.getString("text"),
-                        rs.getLong("post_id")
-                ),
+                commentRowMapper,
                 commentCreateRequest.postId(),
                 commentCreateRequest.text(),
                 Timestamp.valueOf(now),
@@ -108,11 +76,7 @@ public class CommentRepositoryImpl implements CommentRepository {
     public CommentResponse updateText(Long commentId, String text) {
         return jdbcTemplate.queryForObject(
                 UPDATE_COMMENT_TEXT,
-                (rs, rowNum) -> new CommentResponse(
-                        rs.getLong("id"),
-                        rs.getString("text"),
-                        rs.getLong("post_id")
-                ),
+                commentRowMapper,
                 text,
                 Timestamp.valueOf(LocalDateTime.now()),
                 commentId

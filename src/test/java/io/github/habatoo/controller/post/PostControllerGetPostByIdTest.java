@@ -22,9 +22,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода getPostById для обработки получения поста по id.")
 class PostControllerGetPostByIdTest extends PostControllerTestBase {
 
-    @DisplayName("Должен вернуть пост когда он существует")
     @Test
-    void shouldReturnPostWhenExists() {
+    @DisplayName("Должен вернуть пост когда он существует")
+    void shouldReturnPostWhenExistsTest() {
         PostResponse expectedPost = createPostResponse(VALID_POST_ID, POST_TITLE, POST_TEXT,
                 POST_TAGS, 5, 3);
 
@@ -37,9 +37,9 @@ class PostControllerGetPostByIdTest extends PostControllerTestBase {
         verify(postService).getPostById(VALID_POST_ID);
     }
 
-    @DisplayName("Должен вернуть 404 когда пост не найден")
     @Test
-    void shouldReturnNotFoundWhenPostDoesNotExist() {
+    @DisplayName("Должен вернуть 404 когда пост не найден")
+    void shouldReturnNotFoundWhenPostDoesNotExistTest() {
         when(postService.getPostById(NON_EXISTENT_POST_ID)).thenReturn(Optional.empty());
 
         ResponseEntity<PostResponse> response = postController.getPostById(NON_EXISTENT_POST_ID);
@@ -52,7 +52,7 @@ class PostControllerGetPostByIdTest extends PostControllerTestBase {
     @DisplayName("Должен корректно обработать различные идентификаторы постов")
     @ParameterizedTest
     @ValueSource(longs = {1L, 10L, 100L, 1000L, Long.MAX_VALUE})
-    void shouldHandleDifferentPostIds(Long postId) {
+    void shouldHandleDifferentPostIdsTest(Long postId) {
         PostResponse expectedPost = createPostResponse(postId, "Пост " + postId,
                 "Текст поста", List.of("tag"), 0, 0);
 

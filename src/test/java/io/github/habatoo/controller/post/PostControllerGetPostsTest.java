@@ -20,9 +20,9 @@ import static org.mockito.Mockito.when;
  */
 class PostControllerGetPostsTest extends PostControllerTestBase {
 
-    @DisplayName("Должен вернуть пагинированный список постов при валидных параметрах")
     @Test
-    void shouldReturnPaginatedPostListWithValidParameters() {
+    @DisplayName("Должен вернуть пагинированный список постов при валидных параметрах")
+    void shouldReturnPaginatedPostListWithValidParametersTest() {
         List<PostResponse> posts = createPostList();
         PostListResponse expectedResponse = createPostListResponse(posts, false, true, 3);
 
@@ -37,9 +37,9 @@ class PostControllerGetPostsTest extends PostControllerTestBase {
         verify(postService).getPosts(SEARCH_QUERY, VALID_PAGE_NUMBER, VALID_PAGE_SIZE);
     }
 
-    @DisplayName("Должен вернуть пустой список когда посты не найдены")
     @Test
-    void shouldReturnEmptyListWhenNoPostsFound() {
+    @DisplayName("Должен вернуть пустой список когда посты не найдены")
+    void shouldReturnEmptyListWhenNoPostsFoundTest() {
         PostListResponse expectedResponse = createPostListResponse(List.of(), false, false, 0);
 
         when(postService.getPosts(SEARCH_QUERY, VALID_PAGE_NUMBER, VALID_PAGE_SIZE))
@@ -63,7 +63,7 @@ class PostControllerGetPostsTest extends PostControllerTestBase {
             "test, 10, 20",
             "' ', 1, 1"
     })
-    void shouldHandleDifferentPaginationParameters(String search, int pageNumber, int pageSize) {
+    void shouldHandleDifferentPaginationParametersTest(String search, int pageNumber, int pageSize) {
         PostListResponse expectedResponse = createPostListResponse(createPostList(), true, false, 5);
 
         when(postService.getPosts(search, pageNumber, pageSize)).thenReturn(expectedResponse);

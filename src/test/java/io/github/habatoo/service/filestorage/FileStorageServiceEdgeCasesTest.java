@@ -1,9 +1,9 @@
 package io.github.habatoo.service.filestorage;
 
-import io.github.habatoo.service.FileStorageService;
 import io.github.habatoo.service.impl.FileStorageServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -18,24 +18,39 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 /**
- * Тесты для метода saveImageFile.
+ * Тесты для метода saveImageFile в FileStorageServiceImpl,
+ * покрывающие различные крайние кейсы и сценарии работы с файловой системой.
+ *
+ * <p>Включает:
+ * <ul>
+ *   <li>Автоматическое создание директории при включенной соответствующей опции</li>
+ *   <li>Обработку исключений при невозможности создать директорию</li>
+ *   <li>Работу с очень длинными именами файлов</li>
+ *   <li>Обработку специальных символов в именах файлов</li>
+ *   <li>Параллельное сохранение нескольких файлов с генерацией уникальных имён</li>
+ * </ul>
+ * </p>
  */
 @DisplayName("Тесты метода saveImageFile")
 class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
 
-    @DisplayName("Должен автоматически создавать upload директорию при включенной опции")
+    /**
+     * Проверяет автоматическое создание директории загрузки при наличии опции autoCreateDir.
+     * После теста загрузочная директория удаляется рекурсивно для предотвращения побочных эффектов.
+     */
     @Test
-    void shouldAutoCreateUploadDirectoryWhenEnabled() {
+    @DisplayName("Должен автоматически создавать upload директорию при включенной опции")
+    void shouldAutoCreateUploadDirectoryWhenEnabledTest() {
         Path customUploadDir = Paths.get("auto-create-test");
 
-        FileStorageService service = new FileStorageServiceImpl(
+        new FileStorageServiceImpl(
                 "auto-create-test",
                 true,
                 fileNameGenerator,
@@ -50,18 +65,74 @@ class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
                     .forEach(path -> {
                         try {
                             Files.deleteIfExists(path);
-                        } catch (IOException e) {
-                            // Ignore
+                        } catch (IOException ignore) {
                         }
                     });
-        } catch (IOException e) {
-            // Ignore cleanup
+        } catch (IOException ignore) {
         }
     }
 
-    @DisplayName("Должен обрабатывать очень длинные имена файлов")
+    /**
+     * Проверяет, что конструктор выбрасывает RuntimeException,
+     * если директория для загрузки не может быть создана из-за ошибки ввода-вывода.
+     */
     @Test
-    void shouldHandleVeryLongFilenames() throws IOException {
+    @DisplayName("Должен выбросить RuntimeException если директория не создаётся при инициализации")
+    void shouldThrowIfCannotCreateUploadDirTest() {
+        Path badPath = Paths.get("/bad/path/to/uploads").toAbsolutePath().normalize();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            filesMock.when(() -> Files.exists(badPath)).thenReturn(false);
+            filesMock.when(() -> Files.createDirectories(badPath))
+                    .thenThrow(new IOException("Cannot create dir"));
+
+            RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                    new FileStorageServiceImpl(
+                            badPath.toString(),
+                            true,
+                            fileNameGenerator,
+                            pathResolver
+                    )
+            );
+
+            assertTrue(ex.getMessage().contains("Failed to create upload directory"));
+            assertTrue(ex.getCause() instanceof IOException);
+        }
+    }
+
+    /**
+     * Проверяет, что если целевой путь уже существует,
+     * но не соответствует требованиям (например, не директория или недоступна для записи),
+     * конструктор выбрасывает корректный RuntimeException.
+     */
+    @Test
+    @DisplayName("Должен выбросить RuntimeException если файла не существует при инициализации")
+    void shouldThrowIfCannotCreateFileTest() {
+        Path badPath = Paths.get("/bad/path/to/uploads").toAbsolutePath().normalize();
+
+        try (MockedStatic<Files> filesMock = mockStatic(Files.class)) {
+            filesMock.when(() -> Files.exists(badPath)).thenReturn(true);
+            RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                    new FileStorageServiceImpl(
+                            badPath.toString(),
+                            true,
+                            fileNameGenerator,
+                            pathResolver
+                    )
+            );
+
+            assertTrue(ex.getMessage().contains("Upload directory is not accessible for writing"));
+            assertTrue(ex.toString().contains("RuntimeException"));
+        }
+    }
+
+    /**
+     * Проверяет корректную работу с очень длинными именами файлов:
+     * убедившись, что файл успешно создаётся на диске и результат не null.
+     */
+    @Test
+    @DisplayName("Должен обрабатывать очень длинные имена файлов")
+    void shouldHandleVeryLongFilenamesTest() throws IOException {
         String longFilename = "a".repeat(100) + ".jpg";
         String generatedName = "12345_6789.jpg";
         byte[] content = "content".getBytes();
@@ -78,9 +149,13 @@ class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
         assertTrue(fileExists(filePath));
     }
 
-    @DisplayName("Должен обрабатывать специальные символы в именах файлов")
+    /**
+     * Проверяет сохранение изображений с именами, содержащими пробелы и специальные символы,
+     * и убеждается, что файл корректно сохраняется по ожидаемому пути.
+     */
     @Test
-    void shouldHandleSpecialCharactersInFilenames() throws IOException {
+    @DisplayName("Должен обрабатывать специальные символы в именах файлов")
+    void shouldHandleSpecialCharactersInFilenamesTest() throws IOException {
         String specialFilename = "file with spaces and (special) chars.jpg";
         String generatedName = "12345_6789.jpg";
         byte[] content = "content".getBytes();
@@ -97,9 +172,13 @@ class FileStorageServiceEdgeCasesTest extends FileStorageServiceTestBase {
         assertTrue(fileExists(filePath));
     }
 
-    @DisplayName("Должен обрабатывать параллельные операции с файлами")
+    /**
+     * Проверяет поддержку параллельной загрузки файлов:
+     * все параллельные операции должны корректно завершиться, а файлы — существовать после выполнения.
+     */
     @Test
-    void shouldHandleParallelFileOperations() throws Exception {
+    @DisplayName("Должен обрабатывать параллельные операции с файлами")
+    void shouldHandleParallelFileOperationsTest() throws Exception {
         ExecutorService executor = Executors.newFixedThreadPool(3);
         List<Callable<String>> tasks = new ArrayList<>();
 

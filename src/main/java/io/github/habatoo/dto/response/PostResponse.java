@@ -47,14 +47,6 @@ public record PostResponse(
             commentsCount = 0;
         }
 
-        // Обеспечиваем иммутабельность списка тегов
         tags = List.copyOf(tags);
-    }
-
-    /**
-     * Создает PostResponse для нового поста (с нулевыми счетчиками).
-     */
-    public static PostResponse forNewPost(Long id, String title, String text, List<String> tags) {
-        return new PostResponse(id, title, text, tags, 0, 0);
     }
 }

@@ -18,9 +18,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода loadImageFile")
 class FileStorageServiceLoadImageFileTest extends FileStorageServiceTestBase {
 
-    @DisplayName("Должен загрузить содержимое файла изображения")
     @Test
-    void shouldLoadImageFileContent() throws IOException {
+    @DisplayName("Должен загрузить содержимое файла изображения")
+    void shouldLoadImageFileContentTest() throws IOException {
         String filename = "123/test.jpg";
         byte[] expectedContent = "image content".getBytes();
         Path filePath = baseUploadPath.resolve(filename);
@@ -36,7 +36,7 @@ class FileStorageServiceLoadImageFileTest extends FileStorageServiceTestBase {
     @DisplayName("Должен загрузить файлы из разных путей")
     @ParameterizedTest
     @MethodSource("filenameProvider")
-    void shouldLoadFilesFromDifferentPaths(String filename) throws IOException {
+    void shouldLoadFilesFromDifferentPathsTest(String filename) throws IOException {
         byte[] content = "test content".getBytes();
         Path filePath = baseUploadPath.resolve(filename);
 
@@ -48,9 +48,9 @@ class FileStorageServiceLoadImageFileTest extends FileStorageServiceTestBase {
         assertArrayEquals(content, result);
     }
 
-    @DisplayName("Должен выбросить исключение при загрузке несуществующего файла")
     @Test
-    void shouldThrowExceptionWhenLoadingNonExistentFile() {
+    @DisplayName("Должен выбросить исключение при загрузке несуществующего файла")
+    void shouldThrowExceptionWhenLoadingNonExistentFileTest() {
         String filename = "nonexistent/file.jpg";
         Path filePath = baseUploadPath.resolve(filename);
 

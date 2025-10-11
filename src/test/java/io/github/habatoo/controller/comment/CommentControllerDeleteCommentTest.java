@@ -18,9 +18,9 @@ import static org.mockito.Mockito.*;
 @DisplayName("Тесты метода deleteComment для обработки удаления комментария.")
 class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
 
-    @DisplayName("Должен удалить комментарий и вернуть 200 статус")
     @Test
-    void shouldDeleteCommentAndReturnOkStatus() {
+    @DisplayName("Должен удалить комментарий и вернуть 200 статус")
+    void shouldDeleteCommentAndReturnOkStatusTest() {
         doNothing().when(commentService).deleteComment(VALID_POST_ID, VALID_COMMENT_ID);
 
         ResponseEntity<Void> response = commentController.deleteComment(VALID_POST_ID, VALID_COMMENT_ID);
@@ -30,9 +30,9 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
         verify(commentService).deleteComment(VALID_POST_ID, VALID_COMMENT_ID);
     }
 
-    @DisplayName("Должен выбросить исключение при удалении несуществующего комментария")
     @Test
-    void shouldThrowExceptionWhenDeletingNonExistentComment() {
+    @DisplayName("Должен выбросить исключение при удалении несуществующего комментария")
+    void shouldThrowExceptionWhenDeletingNonExistentCommentTest() {
         doThrow(new EmptyResultDataAccessException("Comment not found", 1))
                 .when(commentService).deleteComment(VALID_POST_ID, NON_EXISTENT_COMMENT_ID);
 
@@ -50,7 +50,7 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
             "100, 50",
             "999, 888"
     })
-    void shouldDeleteCommentsWithDifferentIds(Long postId, Long commentId) {
+    void shouldDeleteCommentsWithDifferentIdsTest(Long postId, Long commentId) {
         doNothing().when(commentService).deleteComment(postId, commentId);
 
         ResponseEntity<Void> response = commentController.deleteComment(postId, commentId);
@@ -62,7 +62,7 @@ class CommentControllerDeleteCommentTest extends CommentControllerTestBase {
     @DisplayName("Должен обработать граничные значения идентификаторов")
     @ParameterizedTest
     @ValueSource(longs = {1L, 2L, Long.MAX_VALUE - 1, Long.MAX_VALUE})
-    void shouldHandleBoundaryIdValues(Long commentId) {
+    void shouldHandleBoundaryIdValuesTest(Long commentId) {
         doNothing().when(commentService).deleteComment(VALID_POST_ID, commentId);
 
         ResponseEntity<Void> response = commentController.deleteComment(VALID_POST_ID, commentId);

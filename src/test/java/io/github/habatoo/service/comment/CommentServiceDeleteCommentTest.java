@@ -20,7 +20,7 @@ class CommentServiceDeleteCommentTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен удалить комментарий и обновить кеш")
-    void shouldDeleteCommentAndUpdateCacheAndPost() {
+    void shouldDeleteCommentAndUpdateCacheAndPostTest() {
         when(postService.postExists(VALID_POST_ID)).thenReturn(true);
         when(commentRepository.deleteById(VALID_COMMENT_ID)).thenReturn(1);
 
@@ -40,7 +40,7 @@ class CommentServiceDeleteCommentTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен выбрасывать исключение при удалении несуществующего комментария")
-    void shouldThrowWhenCommentNotFoundForDelete() {
+    void shouldThrowWhenCommentNotFoundForDeleteTest() {
         when(postService.postExists(VALID_POST_ID)).thenReturn(true);
         when(commentRepository.deleteById(NON_EXISTENT_COMMENT_ID)).thenReturn(0);
 
@@ -54,7 +54,7 @@ class CommentServiceDeleteCommentTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен выбрасывать исключение, если пост не существует")
-    void shouldThrowIfPostDoesNotExist() {
+    void shouldThrowIfPostDoesNotExistTest() {
         when(postService.postExists(INVALID_POST_ID)).thenReturn(false);
 
         assertThrows(IllegalStateException.class,

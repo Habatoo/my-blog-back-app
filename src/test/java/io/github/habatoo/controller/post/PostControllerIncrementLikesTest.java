@@ -17,9 +17,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода incrementLikes для обработки инкремента лайков у постов.")
 class PostControllerIncrementLikesTest extends PostControllerTestBase {
 
-    @DisplayName("Должен увеличить лайки и вернуть обновленное количество")
     @Test
-    void shouldIncrementLikesAndReturnUpdatedCount() {
+    @DisplayName("Должен увеличить лайки и вернуть обновленное количество")
+    void shouldIncrementLikesAndReturnUpdatedCountTest() {
         int expectedLikesCount = 6;
 
         when(postService.incrementLikes(VALID_POST_ID)).thenReturn(expectedLikesCount);
@@ -39,7 +39,7 @@ class PostControllerIncrementLikesTest extends PostControllerTestBase {
             "3, 100",
             "4, 999"
     })
-    void shouldIncrementLikesForDifferentPosts(Long postId, int expectedLikes) {
+    void shouldIncrementLikesForDifferentPostsTest(Long postId, int expectedLikes) {
         when(postService.incrementLikes(postId)).thenReturn(expectedLikes);
 
         ResponseEntity<Integer> response = postController.incrementLikes(postId);
@@ -49,9 +49,9 @@ class PostControllerIncrementLikesTest extends PostControllerTestBase {
         verify(postService).incrementLikes(postId);
     }
 
-    @DisplayName("Должен обработать начальное значение лайков")
     @Test
-    void shouldHandleInitialLikesCount() {
+    @DisplayName("Должен обработать начальное значение лайков")
+    void shouldHandleInitialLikesCountTest() {
         when(postService.incrementLikes(VALID_POST_ID)).thenReturn(1);
 
         ResponseEntity<Integer> response = postController.incrementLikes(VALID_POST_ID);

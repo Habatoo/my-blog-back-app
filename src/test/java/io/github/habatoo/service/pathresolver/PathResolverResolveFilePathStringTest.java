@@ -26,7 +26,7 @@ class PathResolverResolveFilePathStringTest extends PathResolverTestBase {
             "nested/dir/file.txt",
             "./image.jpg"
     })
-    void shouldResolveFilePathWithinBase(String filename) {
+    void shouldResolveFilePathWithinBaseTest(String filename) {
         Path resolved = pathResolver.resolveFilePath(filename);
         assertTrue(resolved.toAbsolutePath().startsWith(Paths.get(BASE_UPLOAD_DIR).toAbsolutePath()),
                 "Путь должен быть внутри базового каталога");
@@ -39,7 +39,7 @@ class PathResolverResolveFilePathStringTest extends PathResolverTestBase {
             "/etc/passwd",                      // абсолютный путь вне basePath
             "../outside_dir/image.png"
     })
-    void shouldThrowSecurityExceptionForPathsOutsideBase(String filename) {
+    void shouldThrowSecurityExceptionForPathsOutsideBaseTest(String filename) {
         SecurityException ex = assertThrows(SecurityException.class,
                 () -> pathResolver.resolveFilePath(filename));
         assertTrue(ex.getMessage().contains("Attempt to access file outside upload directory"));

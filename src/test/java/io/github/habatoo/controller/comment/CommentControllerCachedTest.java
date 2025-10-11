@@ -23,8 +23,14 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Тесты для CommentController с максимальным кешированием MockMvc
- * Использует Standalone Setup с @BeforeAll для однократной инициализации
+ * <h2>Тесты для CommentController c максимальным кешированием MockMvc</h2>
+ *
+ * <p>
+ * Класс покрывает unit-тесты основных методов контроллера CommentController с использованием Standalone MockMvc.
+ * MockMvc и тестовые данные инициализируются единожды в @BeforeAll для максимальной производительности.
+ * Каждый тест проверяет корректность эндпоинтов, обработку ошибок и возврат ожидаемых ответов.
+ * Тесты полностью изолированы от Spring-контекста — мокируется только сервисный слой CommentService.
+ * </p>
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("Тесты unit уровня методов контроллера CommentController с использованием Cached MockMvc.")
@@ -71,7 +77,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/comments - должен вернуть список комментариев")
-    void getCommentsByPostId_WithValidPostId_ShouldReturnCommentsList() throws Exception {
+    void getCommentsByPostIdWithValidPostIdTest() throws Exception {
         Long postId = 1L;
         List<CommentResponse> mockComments = Arrays.asList(mockComment1, mockComment2);
         when(commentService.getCommentsByPostId(postId)).thenReturn(mockComments);
@@ -113,7 +119,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/comments - должен вернуть пустой список")
-    void getCommentsByPostId_WithNoComments_ShouldReturnEmptyList() throws Exception {
+    void getCommentsByPostIdWithNoCommentsTest() throws Exception {
         Long postId = 2L;
         when(commentService.getCommentsByPostId(postId)).thenReturn(Collections.emptyList());
 
@@ -131,7 +137,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/comments/{commentId} - должен вернуть 404 для несуществующего комментария")
-    void getCommentByPostIdAndId_WithNonExistentComment_ShouldReturnNotFound() throws Exception {
+    void getCommentByPostIdAndIdWithNonExistentCommentTest() throws Exception {
         Long postId = 1L;
         Long commentId = 999L;
         when(commentService.getCommentByPostIdAndId(postId, commentId))
@@ -149,7 +155,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/comments/{commentId} - должен вернуть комментарий")
-    void getCommentByPostIdAndId_WithValidIds_ShouldReturnComment() throws Exception {
+    void getCommentByPostIdAndIdWithValidIdsTest() throws Exception {
         Long postId = 1L;
         Long commentId = 1L;
         when(commentService.getCommentByPostIdAndId(postId, commentId))
@@ -175,7 +181,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("POST /api/posts/{postId}/comments - должен создать комментарий")
-    void createComment_WithValidRequest_ShouldReturnCreated() throws Exception {
+    void createCommentWithValidRequestTest() throws Exception {
         Long postId = 1L;
         when(commentService.createComment(any(CommentCreateRequest.class)))
                 .thenReturn(mockComment1);
@@ -202,7 +208,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("PUT /api/posts/{postId}/comments/{commentId} - должен обновить комментарий")
-    void updateComment_WithValidRequest_ShouldReturnUpdatedComment() throws Exception {
+    void updateCommentWithValidRequestTest() throws Exception {
         Long postId = 1L;
         Long commentId = 2L;
         CommentResponse updatedComment = new CommentResponse(2L, "Обновленный комментарий", 1L);
@@ -233,7 +239,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("DELETE /api/posts/{postId}/comments/{commentId} - должен удалить комментарий")
-    void deleteComment_WithValidIds_ShouldReturnOk() throws Exception {
+    void deleteCommentWithValidIdsTest() throws Exception {
         Long postId = 1L;
         Long commentId = 1L;
 
@@ -249,7 +255,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("POST /api/posts/{postId}/comments - должен вернуть 400 при невалидных данных")
-    void createComment_WithInvalidData_ShouldReturnBadRequest() throws Exception {
+    void createCommentWithInvalidDataTest() throws Exception {
         Long postId = 1L;
         when(commentService.createComment(any(CommentCreateRequest.class)))
                 .thenThrow(new IllegalArgumentException("Invalid comment data"));
@@ -267,7 +273,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/comments - должен вернуть 500 при ошибке БД")
-    void getCommentsByPostId_WithDataAccessError_ShouldReturnInternalServerError() throws Exception {
+    void getCommentsByPostIdWithDataAccessErrorTest() throws Exception {
         Long postId = 1L;
         when(commentService.getCommentsByPostId(postId))
                 .thenThrow(new org.springframework.dao.DataAccessException("Database error") {
@@ -285,7 +291,7 @@ class CommentControllerCachedTest {
      */
     @Test
     @DisplayName("GET /api/posts/{postId}/comments - должен работать с разными ID постов")
-    void getCommentsByPostId_WithDifferentPostIds_ShouldWorkCorrectly_Minimal() throws Exception {
+    void getCommentsByPostIdWithDifferentPostIdsTest() throws Exception {
         Long[] postIds = {1L, 100L, 9999L};
         for (Long postId : postIds) {
             reset(commentService);

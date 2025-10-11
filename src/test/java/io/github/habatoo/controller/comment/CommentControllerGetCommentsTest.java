@@ -18,9 +18,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода getCommentsByPostId для получения списка комментариев.")
 class CommentControllerGetCommentsTest extends CommentControllerTestBase {
 
-    @DisplayName("Должен вернуть список комментариев для существующего поста")
     @Test
-    void shouldReturnCommentsListForExistingPost() {
+    @DisplayName("Должен вернуть список комментариев для существующего поста")
+    void shouldReturnCommentsListForExistingPostTest() {
         List<CommentResponse> expectedComments = createCommentList(VALID_POST_ID);
 
         when(commentService.getCommentsByPostId(VALID_POST_ID))
@@ -35,9 +35,9 @@ class CommentControllerGetCommentsTest extends CommentControllerTestBase {
         verify(commentService).getCommentsByPostId(VALID_POST_ID);
     }
 
-    @DisplayName("Должен вернуть пустой список когда у поста нет комментариев")
     @Test
-    void shouldReturnEmptyListWhenPostHasNoComments() {
+    @DisplayName("Должен вернуть пустой список когда у поста нет комментариев")
+    void shouldReturnEmptyListWhenPostHasNoCommentsTest() {
         when(commentService.getCommentsByPostId(VALID_POST_ID)).thenReturn(List.of());
 
         List<CommentResponse> actualComments = commentController
@@ -51,7 +51,7 @@ class CommentControllerGetCommentsTest extends CommentControllerTestBase {
     @DisplayName("Должен корректно обработать различные идентификаторы постов")
     @ParameterizedTest
     @ValueSource(longs = {1L, 100L, 9999L, Long.MAX_VALUE})
-    void shouldHandleDifferentPostIds(Long postId) {
+    void shouldHandleDifferentPostIdsTest(Long postId) {
         List<CommentResponse> expectedComments = createCommentList(postId);
 
         when(commentService.getCommentsByPostId(postId))

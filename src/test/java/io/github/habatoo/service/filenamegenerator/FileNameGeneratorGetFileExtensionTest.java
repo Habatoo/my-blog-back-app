@@ -20,7 +20,7 @@ class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен извлекать расширение из файлов с различными форматами")
     @ParameterizedTest
     @MethodSource("fileExtensionProvider")
-    void shouldExtractExtensionFromFilesWithExtensions(String filename, String expectedExtension) {
+    void shouldExtractExtensionFromFilesWithExtensionsTest(String filename, String expectedExtension) {
         String result = ReflectionTestUtils.invokeMethod(fileNameGenerator, "getFileExtension", filename);
 
         assertEquals(expectedExtension, result);
@@ -30,7 +30,7 @@ class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {"file", "noextension", "justname"})
-    void shouldReturnDefaultExtensionForFilesWithoutExtension(String filename) {
+    void shouldReturnDefaultExtensionForFilesWithoutExtensionTest(String filename) {
         String result = ReflectionTestUtils.invokeMethod(fileNameGenerator, "getFileExtension", filename);
 
         assertEquals(DEFAULT_EXTENSION, result);
@@ -39,7 +39,7 @@ class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен возвращать расширение по умолчанию для файлов с пустым расширением")
     @ParameterizedTest
     @ValueSource(strings = {"file.", "image.", "test."})
-    void shouldReturnDefaultExtensionForEmptyExtension(String filename) {
+    void shouldReturnDefaultExtensionForEmptyExtensionTest(String filename) {
         String result = ReflectionTestUtils.invokeMethod(fileNameGenerator, "getFileExtension", filename);
 
         assertEquals(DEFAULT_EXTENSION, result);
@@ -48,7 +48,7 @@ class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен обрабатывать файлы с несколькими точками")
     @ParameterizedTest
     @MethodSource("multipleDotsFileProvider")
-    void shouldHandleFilesWithMultipleDots(String filename, String expectedExtension) {
+    void shouldHandleFilesWithMultipleDotsTest(String filename, String expectedExtension) {
         String result = ReflectionTestUtils.invokeMethod(fileNameGenerator, "getFileExtension", filename);
 
         assertEquals(expectedExtension, result);
@@ -57,7 +57,7 @@ class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен приводить расширения к нижнему регистру")
     @ParameterizedTest
     @MethodSource("uppercaseFileProvider")
-    void shouldConvertExtensionToLowerCase(String filename, String expectedExtension) {
+    void shouldConvertExtensionToLowerCaseTest(String filename, String expectedExtension) {
         String result = ReflectionTestUtils.invokeMethod(fileNameGenerator, "getFileExtension", filename);
 
         assertEquals(expectedExtension, result);
@@ -66,7 +66,7 @@ class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен обрабатывать граничные случаи с точками")
     @ParameterizedTest
     @MethodSource("edgeCasesFileProvider")
-    void shouldHandleEdgeCasesWithDots(String filename, String expectedExtension) {
+    void shouldHandleEdgeCasesWithDotsTest(String filename, String expectedExtension) {
         String result = ReflectionTestUtils.invokeMethod(fileNameGenerator, "getFileExtension", filename);
 
         assertEquals(expectedExtension, result);
@@ -75,7 +75,7 @@ class FileNameGeneratorGetFileExtensionTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен работать с разными расширениями по умолчанию")
     @ParameterizedTest
     @MethodSource("defaultExtensionProvider")
-    void shouldWorkWithDifferentDefaultExtensions(String defaultExt) {
+    void shouldWorkWithDifferentDefaultExtensionsTest(String defaultExt) {
         FileNameGenerator generator = new FileNameGeneratorImpl(defaultExt);
 
         String result = ReflectionTestUtils.invokeMethod(generator, "getFileExtension", "file");

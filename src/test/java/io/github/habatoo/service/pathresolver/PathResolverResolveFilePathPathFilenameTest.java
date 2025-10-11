@@ -25,7 +25,7 @@ class PathResolverResolveFilePathPathFilenameTest extends PathResolverTestBase {
             "uploads/posts/456, nested.png",
             "uploads/posts/100, ./file.txt"
     })
-    void shouldResolveFilePathWithDirectoryWithinBase(String dir, String filename) {
+    void shouldResolveFilePathWithDirectoryWithinBaseTest(String dir, String filename) {
         Path dirPath = Paths.get(dir).toAbsolutePath().normalize();
         Path resolved = pathResolver.resolveFilePath(dirPath, filename);
         assertTrue(resolved.startsWith(dirPath),
@@ -42,7 +42,7 @@ class PathResolverResolveFilePathPathFilenameTest extends PathResolverTestBase {
             "'C:\\uploads\\posts\\123', image.jpg",
             "../outside_dir, image.png"
     })
-    void shouldThrowSecurityExceptionForInvalidDirectoryOrFile(String dir, String filename) {
+    void shouldThrowSecurityExceptionForInvalidDirectoryOrFileTest(String dir, String filename) {
         Path dirPath = Paths.get(dir).toAbsolutePath().normalize();
         SecurityException ex = assertThrows(SecurityException.class,
                 () -> pathResolver.resolveFilePath(dirPath, filename));

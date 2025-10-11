@@ -20,9 +20,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода getCommentByPostIdAndId в CommentController")
 class CommentControllerGetCommentTest extends CommentControllerTestBase {
 
-    @DisplayName("Должен вернуть комментарий когда он существует")
     @Test
-    void shouldReturnCommentWhenExists() {
+    @DisplayName("Должен вернуть комментарий когда он существует")
+    void shouldReturnCommentWhenExistsTest() {
         CommentResponse expectedComment = createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, COMMENT_TEXT);
 
         when(commentService.getCommentByPostIdAndId(VALID_POST_ID, VALID_COMMENT_ID))
@@ -37,9 +37,9 @@ class CommentControllerGetCommentTest extends CommentControllerTestBase {
         verify(commentService).getCommentByPostIdAndId(VALID_POST_ID, VALID_COMMENT_ID);
     }
 
-    @DisplayName("Должен вернуть 404 когда комментарий не найден")
     @Test
-    void shouldReturnNotFoundWhenCommentDoesNotExist() {
+    @DisplayName("Должен вернуть 404 когда комментарий не найден")
+    void shouldReturnNotFoundWhenCommentDoesNotExistTest() {
         when(commentService.getCommentByPostIdAndId(VALID_POST_ID, NON_EXISTENT_COMMENT_ID))
                 .thenReturn(Optional.empty());
 
@@ -51,9 +51,9 @@ class CommentControllerGetCommentTest extends CommentControllerTestBase {
         verify(commentService).getCommentByPostIdAndId(VALID_POST_ID, NON_EXISTENT_COMMENT_ID);
     }
 
-    @DisplayName("Должен вернуть 404 когда комментарий не принадлежит посту")
     @Test
-    void shouldReturnNotFoundWhenCommentDoesNotBelongToPost() {
+    @DisplayName("Должен вернуть 404 когда комментарий не принадлежит посту")
+    void shouldReturnNotFoundWhenCommentDoesNotBelongToPostTest() {
         when(commentService.getCommentByPostIdAndId(VALID_POST_ID, VALID_COMMENT_ID))
                 .thenReturn(Optional.empty());
 
@@ -72,7 +72,7 @@ class CommentControllerGetCommentTest extends CommentControllerTestBase {
             "9999, 8888",
             "123, 456"
     })
-    void shouldHandleDifferentPostAndCommentIds(Long postId, Long commentId) {
+    void shouldHandleDifferentPostAndCommentIdsTest(Long postId, Long commentId) {
         CommentResponse expectedComment = createCommentResponse(commentId, postId, COMMENT_TEXT);
 
         when(commentService.getCommentByPostIdAndId(postId, commentId))

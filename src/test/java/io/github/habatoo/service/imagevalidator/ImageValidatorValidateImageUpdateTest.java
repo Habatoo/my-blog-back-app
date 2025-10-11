@@ -16,7 +16,7 @@ class ImageValidatorValidateImageUpdateTest extends ImageValidatorTestBase {
 
     @Test
     @DisplayName("Должен выбросить исключение при null изображении")
-    void shouldThrowWhenImageIsNull() {
+    void shouldThrowWhenImageIsNullTest() {
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> imageValidator.validateImageUpdate(1L, null));
         assertEquals("Image file cannot be null or empty", ex.getMessage());
@@ -24,7 +24,7 @@ class ImageValidatorValidateImageUpdateTest extends ImageValidatorTestBase {
 
     @Test
     @DisplayName("Должен выбросить исключение при пустом файле")
-    void shouldThrowWhenImageIsEmpty() {
+    void shouldThrowWhenImageIsEmptyTest() {
         MultipartFile emptyFile = mock(MultipartFile.class);
         when(emptyFile.isEmpty()).thenReturn(true);
 
@@ -35,7 +35,7 @@ class ImageValidatorValidateImageUpdateTest extends ImageValidatorTestBase {
 
     @Test
     @DisplayName("Не должен выбрасывать исключение при корректном файле")
-    void shouldNotThrowWhenImageIsValid() {
+    void shouldNotThrowWhenImageIsValidTest() {
         MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
 
@@ -45,7 +45,7 @@ class ImageValidatorValidateImageUpdateTest extends ImageValidatorTestBase {
     @ParameterizedTest
     @DisplayName("Должен выбрасывать исключение при некорректном postId")
     @ValueSource(longs = {0, -1, -100})
-    void shouldThrowWhenPostIdInvalid(Long postId) {
+    void shouldThrowWhenPostIdInvalidTest(Long postId) {
         MockMultipartFile file = new MockMultipartFile(
                 "image",
                 "filename.jpg",
@@ -60,7 +60,7 @@ class ImageValidatorValidateImageUpdateTest extends ImageValidatorTestBase {
 
     @Test
     @DisplayName("Не должен выбрасывать исключение для корректного postId")
-    void shouldNotThrowWhenPostIdValid() {
+    void shouldNotThrowWhenPostIdValidTest() {
         MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
 

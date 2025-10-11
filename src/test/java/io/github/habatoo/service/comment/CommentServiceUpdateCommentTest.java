@@ -19,7 +19,7 @@ class CommentServiceUpdateCommentTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен обновить комментарий и обновить кеш")
-    void shouldUpdateCommentAndRefreshCache() {
+    void shouldUpdateCommentAndRefreshCacheTest() {
         when(postService.postExists(VALID_POST_ID)).thenReturn(true);
 
         CommentResponse original = createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, COMMENT_TEXT);
@@ -44,7 +44,7 @@ class CommentServiceUpdateCommentTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен выбрасывать исключение, если комментарий для обновления не найден")
-    void shouldThrowWhenCommentNotFoundForUpdate() {
+    void shouldThrowWhenCommentNotFoundForUpdateTest() {
         when(postService.postExists(VALID_POST_ID)).thenReturn(true);
 
         when(commentRepository.updateText(VALID_COMMENT_ID, UPDATED_COMMENT_TEXT))
@@ -58,7 +58,7 @@ class CommentServiceUpdateCommentTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен выбрасывать исключение, если пост не существует")
-    void shouldThrowIfPostDoesNotExist() {
+    void shouldThrowIfPostDoesNotExistTest() {
         when(postService.postExists(INVALID_POST_ID)).thenReturn(false);
 
         assertThrows(IllegalStateException.class,

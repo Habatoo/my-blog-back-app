@@ -78,9 +78,6 @@ public class FileStorageServiceImpl implements FileStorageService {
     @Override
     public void deletePostDirectory(Long postId) {
         Path postDir = baseUploadPath.resolve(postId.toString()).normalize();
-        if (!postDir.startsWith(baseUploadPath)) {
-            throw new SecurityException("Attempt to access directory outside upload directory");
-        }
         try {
             if (Files.exists(postDir) && Files.isDirectory(postDir)) {
                 try (Stream<Path> paths = Files.walk(postDir)) {
@@ -111,6 +108,9 @@ public class FileStorageServiceImpl implements FileStorageService {
         try {
             if (!Files.exists(baseUploadPath)) {
                 Files.createDirectories(baseUploadPath);
+            }
+            if (!Files.isDirectory(baseUploadPath)) {
+                throw new RuntimeException("Upload directory is not accessible for writing: " + baseUploadPath);
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to create upload directory: " + baseUploadPath, e);

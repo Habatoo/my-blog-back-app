@@ -20,9 +20,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода saveImageFile")
 class FileStorageServiceSaveImageFileTest extends FileStorageServiceTestBase {
 
-    @DisplayName("Должен сохранить файл изображения и вернуть путь")
     @Test
-    void shouldSaveImageFileAndReturnPath() throws IOException {
+    @DisplayName("Должен сохранить файл изображения и вернуть путь")
+    void shouldSaveImageFileAndReturnPathTest() throws IOException {
         String filename = "test.jpg";
         String generatedName = "12345_6789.jpg";
         byte[] fileContent = "test image content".getBytes();
@@ -42,7 +42,7 @@ class FileStorageServiceSaveImageFileTest extends FileStorageServiceTestBase {
     @DisplayName("Должен сохранить файлы для разных постов")
     @ParameterizedTest
     @MethodSource("postIdProvider")
-    void shouldSaveFilesForDifferentPosts(Long postId) throws IOException {
+    void shouldSaveFilesForDifferentPostsTest(Long postId) throws IOException {
         String filename = "image.jpg";
         String generatedName = "timestamp_random.jpg";
         byte[] content = "content".getBytes();
@@ -59,9 +59,9 @@ class FileStorageServiceSaveImageFileTest extends FileStorageServiceTestBase {
         assertTrue(fileExists(filePath));
     }
 
-    @DisplayName("Должен создавать директорию поста при сохранении")
     @Test
-    void shouldCreatePostDirectoryWhenSaving() throws IOException {
+    @DisplayName("Должен создавать директорию поста при сохранении")
+    void shouldCreatePostDirectoryWhenSavingTest() throws IOException {
         String filename = "test.png";
         String generatedName = "11111_2222.png";
         byte[] content = "png content".getBytes();
@@ -80,7 +80,7 @@ class FileStorageServiceSaveImageFileTest extends FileStorageServiceTestBase {
     @DisplayName("Должен обрабатывать разные типы файлов")
     @ParameterizedTest
     @ValueSource(strings = {"image.jpg", "photo.png", "picture.gif", "file.pdf"})
-    void shouldHandleDifferentFileTypes(String filename) throws IOException {
+    void shouldHandleDifferentFileTypesTest(String filename) throws IOException {
         String generatedName = "12345_6789" + filename.substring(filename.lastIndexOf('.'));
         byte[] content = "file content".getBytes();
         MultipartFile file = createMockMultipartFile(filename, content);

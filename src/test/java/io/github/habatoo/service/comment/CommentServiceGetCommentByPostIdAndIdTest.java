@@ -20,7 +20,7 @@ class CommentServiceGetCommentByPostIdAndIdTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен возвращать комментарий из кеша при наличии")
-    void shouldReturnCommentFromCacheIfPresent() {
+    void shouldReturnCommentFromCacheIfPresentTest() {
         List<CommentResponse> repoComments = List.of(createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, COMMENT_TEXT));
         when(postService.postExists(VALID_POST_ID)).thenReturn(true);
         when(commentRepository.findByPostId(VALID_POST_ID)).thenReturn(repoComments);
@@ -34,7 +34,7 @@ class CommentServiceGetCommentByPostIdAndIdTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен возвращать комментарий из репозитория, если кеш пуст")
-    void shouldReturnCommentFromRepositoryIfNotCached() {
+    void shouldReturnCommentFromRepositoryIfNotCachedTest() {
         when(commentRepository.findByPostIdAndId(VALID_POST_ID, VALID_COMMENT_ID))
                 .thenReturn(Optional.of(createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, COMMENT_TEXT)));
 
@@ -47,7 +47,7 @@ class CommentServiceGetCommentByPostIdAndIdTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен возвращать пустой Optional если комментарий не найден")
-    void shouldReturnEmptyIfCommentNotFound() {
+    void shouldReturnEmptyIfCommentNotFoundTest() {
         when(commentRepository.findByPostIdAndId(VALID_POST_ID, NON_EXISTENT_COMMENT_ID))
                 .thenReturn(Optional.empty());
 

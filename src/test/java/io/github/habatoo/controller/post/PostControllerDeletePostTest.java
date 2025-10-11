@@ -18,9 +18,9 @@ import static org.mockito.Mockito.verify;
 @DisplayName("Тесты метода deletePost для обработки удаления постов.")
 class PostControllerDeletePostTest extends PostControllerTestBase {
 
-    @DisplayName("Должен удалить пост и вернуть 200 статус")
     @Test
-    void shouldDeletePostAndReturnOkStatus() {
+    @DisplayName("Должен удалить пост и вернуть 200 статус")
+    void shouldDeletePostAndReturnOkStatusTest() {
         doNothing().when(postService).deletePost(VALID_POST_ID);
 
         ResponseEntity<Void> response = postController.deletePost(VALID_POST_ID);
@@ -33,7 +33,7 @@ class PostControllerDeletePostTest extends PostControllerTestBase {
     @DisplayName("Должен корректно удалять посты с различными идентификаторами")
     @ParameterizedTest
     @ValueSource(longs = {1L, 2L, 10L, 100L, 1000L})
-    void shouldDeletePostsWithDifferentIds(Long postId) {
+    void shouldDeletePostsWithDifferentIdsTest(Long postId) {
         doNothing().when(postService).deletePost(postId);
 
         ResponseEntity<Void> response = postController.deletePost(postId);
@@ -45,7 +45,7 @@ class PostControllerDeletePostTest extends PostControllerTestBase {
     @DisplayName("Должен обработать граничные значения идентификаторов")
     @ParameterizedTest
     @ValueSource(longs = {1L, Long.MAX_VALUE - 1, Long.MAX_VALUE})
-    void shouldHandleBoundaryIdValues(Long postId) {
+    void shouldHandleBoundaryIdValuesTest(Long postId) {
         doNothing().when(postService).deletePost(postId);
 
         ResponseEntity<Void> response = postController.deletePost(postId);
@@ -53,5 +53,4 @@ class PostControllerDeletePostTest extends PostControllerTestBase {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(postService).deletePost(postId);
     }
-
 }

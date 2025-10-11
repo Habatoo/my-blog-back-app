@@ -15,7 +15,7 @@ class PostServiceDeletePostTest extends PostServiceTestBase {
 
     @Test
     @DisplayName("Должен удалить пост, обновить кеш и удалить директорию")
-    void shouldDeletePostAndCleanup() {
+    void shouldDeletePostAndCleanupTest() {
         doNothing().when(postRepository).deletePost(VALID_POST_ID);
         doNothing().when(fileStorageService).deletePostDirectory(VALID_POST_ID);
 

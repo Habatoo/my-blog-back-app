@@ -21,9 +21,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода updateComment для обработки редактирования комментария.")
 class CommentControllerUpdateCommentTest extends CommentControllerTestBase {
 
-    @DisplayName("Должен обновить комментарий и вернуть 200 статус")
     @Test
-    void shouldUpdateCommentAndReturnOkStatus() {
+    @DisplayName("Должен обновить комментарий и вернуть 200 статус")
+    void shouldUpdateCommentAndReturnOkStatusTest() {
         CommentRequest updateRequest = createCommentRequest(VALID_COMMENT_ID, UPDATED_COMMENT_TEXT, VALID_POST_ID);
         CommentResponse expectedResponse = createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, UPDATED_COMMENT_TEXT);
 
@@ -38,9 +38,9 @@ class CommentControllerUpdateCommentTest extends CommentControllerTestBase {
         verify(commentService).updateComment(VALID_POST_ID, VALID_COMMENT_ID, UPDATED_COMMENT_TEXT);
     }
 
-    @DisplayName("Должен выбросить исключение при обновлении несуществующего комментария")
     @Test
-    void shouldThrowExceptionWhenUpdatingNonExistentComment() {
+    @DisplayName("Должен выбросить исключение при обновлении несуществующего комментария")
+    void shouldThrowExceptionWhenUpdatingNonExistentCommentTest() {
         CommentRequest updateRequest = createCommentRequest(NON_EXISTENT_COMMENT_ID, UPDATED_COMMENT_TEXT, VALID_POST_ID);
 
         when(commentService.updateComment(VALID_POST_ID, NON_EXISTENT_COMMENT_ID, UPDATED_COMMENT_TEXT))
@@ -60,7 +60,7 @@ class CommentControllerUpdateCommentTest extends CommentControllerTestBase {
             "10, 20, Еще один текст",
             "100, 200, Финальный вариант текста"
     })
-    void shouldUpdateCommentsWithDifferentTexts(Long postId, Long commentId, String newText) {
+    void shouldUpdateCommentsWithDifferentTextsTest(Long postId, Long commentId, String newText) {
         CommentRequest updateRequest = createCommentRequest(commentId, newText, postId);
         CommentResponse expectedResponse = createCommentResponse(commentId, postId, newText);
 

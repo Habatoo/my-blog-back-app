@@ -2,7 +2,6 @@ package io.github.habatoo.service.imageservice;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -13,14 +12,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
- * Тесты метода updatePostImage класса ImageServiceImpl
+ * Тесты метода updatePostImage класса ImageServiceImpl.
+ *
+ * <p>
+ * Охватываемые сценарии:
+ * <ul>
+ *   <li>Успешное обновление изображения поста с удалением предыдущего и обновлением метаданных</li>
+ *   <li>Выброс исключения, если пост не найден (нет postId в репозитории)</li>
+ *   <li>Обработка ошибок ввода-вывода и выброс исключения при проблемах с файловой системой</li>
+ * </ul>
+ * Каждый тест проверяет публичное API и ключевые ветви метода updatePostImage.
+ * </p>
  */
 @DisplayName("Тесты метода updatePostImage")
 class ImageServiceUpdatePostImageTest extends ImageServiceTestBase {
 
+    /**
+     * Проверяет успешное обновление изображения:
+     * валидация, сохранение нового файла, удаление старого, обновление метаданных
+     * и корректное определение mediaType.
+     */
     @Test
     @DisplayName("Должен корректно обновить изображение поста при валидных данных")
-    void shouldUpdatePostImageSuccessfully() throws IOException {
+    void shouldUpdatePostImageSuccessfullyTest() throws IOException {
         MultipartFile imageFile = createMultipartFile(false, ORIGINAL_FILENAME, IMAGE_SIZE);
 
         doNothing().when(imageValidator).validatePostId(VALID_POST_ID);
@@ -46,13 +60,15 @@ class ImageServiceUpdatePostImageTest extends ImageServiceTestBase {
         verify(contentTypeDetector).detect(IMAGE_DATA);
     }
 
+    /**
+     * Проверяет выброс IllegalStateException, если в репозитории не найден пост с указанным id.
+     */
     @Test
     @DisplayName("Должен выбросить исключение если пост не найден")
-    void shouldThrowIfPostNotFound() {
+    void shouldThrowIfPostNotFoundTest() {
         MultipartFile imageFile = createMultipartFile(false, ORIGINAL_FILENAME, IMAGE_SIZE);
 
         doNothing().when(imageValidator).validatePostId(INVALID_POST_ID);
-
         doNothing().when(imageValidator).validateImageUpdate(INVALID_POST_ID, imageFile);
         when(imageRepository.existsPostById(INVALID_POST_ID)).thenReturn(false);
 
@@ -67,9 +83,12 @@ class ImageServiceUpdatePostImageTest extends ImageServiceTestBase {
         verifyNoMoreInteractions(fileStorageService);
     }
 
+    /**
+     * Проверяет выброс IllegalStateException при ошибке во время сохранения или загрузки файла изображения (например IOException).
+     */
     @Test
     @DisplayName("Должен выбросить исключение если произошла ошибка при работе с файлом")
-    void shouldThrowWhenIOExceptionOccurs() throws IOException {
+    void shouldThrowWhenIOExceptionOccursTest() throws IOException {
         MultipartFile imageFile = createMultipartFile(false, ORIGINAL_FILENAME, IMAGE_SIZE);
 
         doNothing().when(imageValidator).validatePostId(VALID_POST_ID);

@@ -8,25 +8,37 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.Timestamp;
 
+import static io.github.habatoo.repository.sql.CommentSqlQueries.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
- * Тесты методов save, updateText и deleteById
+ * <h2>Тесты методов save, updateText и deleteById репозитория комментариев</h2>
+ *
+ * <p>
+ * Класс проверяет корректность работы основных модифицирующих операций репозитория:
+ * <ul>
+ *     <li>Сохранение нового комментария</li>
+ *     <li>Обновление текста комментария</li>
+ *     <li>Удаление комментария по идентификатору</li>
+ * </ul>
+ * Тесты эмулируют работу с базой данных с помощью мока JdbcTemplate
+ * и проверяют правильность запросов, а также возвращаемых результатов.
+ * </p>
  */
 @DisplayName("Тесты методов сохранения, обновления и удаления комментариев")
 class CommentRepositoryModifyTest extends CommentRepositoryTestBase {
 
+    /**
+     * Проверяет, что метод save правильно сохраняет новый комментарий
+     * и возвращает ожидаемый объект CommentResponse.
+     * Мокаются параметры запроса и возвращаемое значение из JdbcTemplate.
+     */
     @Test
     @DisplayName("Должен сохранить новый комментарий и вернуть созданный объект")
-    void shouldSaveNewComment() {
+    void shouldSaveNewCommentTest() {
         CommentCreateRequest createRequest = createCommentCreateRequest(COMMENT_TEXT, POST_ID);
         CommentResponse expectedResponse = createCommentResponse(COMMENT_ID, POST_ID, COMMENT_TEXT);
-        final String INSERT_COMMENT = """
-                INSERT INTO comment (post_id, text, created_at, updated_at)
-                VALUES (?, ?, ?, ?)
-                RETURNING id, text, post_id
-                """;
 
         when(jdbcTemplate.queryForObject(
                 eq(INSERT_COMMENT),
@@ -44,16 +56,15 @@ class CommentRepositoryModifyTest extends CommentRepositoryTestBase {
                 eq(POST_ID), eq(COMMENT_TEXT), any(Timestamp.class), any(Timestamp.class));
     }
 
+    /**
+     * Проверяет, что метод updateText корректно обновляет текст комментария
+     * и возвращает актуализированный объект CommentResponse.
+     * Проверяется корректность запроса и возврата результата.
+     */
     @Test
     @DisplayName("Должен обновить текст комментария и вернуть обновленный объект")
-    void shouldUpdateCommentText() {
+    void shouldUpdateCommentTextTest() {
         CommentResponse expectedResponse = createCommentResponse(COMMENT_ID, POST_ID, "Updated Text");
-        final String UPDATE_COMMENT_TEXT = """
-                UPDATE comment
-                SET text = ?, updated_at = ?
-                WHERE id = ?
-                RETURNING id, text, post_id
-                """;
 
         when(jdbcTemplate.queryForObject(
                 eq(UPDATE_COMMENT_TEXT),
@@ -70,12 +81,12 @@ class CommentRepositoryModifyTest extends CommentRepositoryTestBase {
                 eq("Updated Text"), any(Timestamp.class), eq(COMMENT_ID));
     }
 
+    /**
+     * Проверяет, что метод deleteById вызывает правильный SQL-запрос и возвращает корректное количество удалённых записей.
+     */
     @Test
     @DisplayName("Должен удалить комментарий по id и вернуть количество удаленных записей")
-    void shouldDeleteCommentById() {
-        final String DELETE_COMMENT = """
-                DELETE FROM comment WHERE id = ?
-                """;
+    void shouldDeleteCommentByIdTest() {
         when(jdbcTemplate.update(eq(DELETE_COMMENT), eq(COMMENT_ID))).thenReturn(1);
 
         int deleted = commentRepository.deleteById(COMMENT_ID);

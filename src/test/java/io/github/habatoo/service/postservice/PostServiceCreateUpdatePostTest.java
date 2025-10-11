@@ -24,10 +24,10 @@ class PostServiceCreateUpdatePostTest extends PostServiceTestBase {
     @ParameterizedTest(name = "Метод: {0}, успешное выполнение: {1}")
     @MethodSource("provideCreateUpdate")
     @DisplayName("Должен корректно создавать или обновлять пост и обновлять кеш")
-    void shouldCreateOrUpdatePost(String method, boolean success) {
+    void shouldCreateOrUpdatePostTest(String method, boolean success) {
         PostCreateRequest createRequest = new PostCreateRequest("Заголовок", "Текст", List.of("tag9", "tag10"));
 
-        List<String > updatedTags = List.of("tag9_new", "tag10");
+        List<String> updatedTags = List.of("tag9_new", "tag10");
         PostRequest updateRequest = new PostRequest(VALID_POST_ID, "Заголовок обновленный", "Текст обновленный", updatedTags);
         PostResponse response = new PostResponse(VALID_POST_ID, createRequest.title(), createRequest.text(), updatedTags, 0, 0);
 

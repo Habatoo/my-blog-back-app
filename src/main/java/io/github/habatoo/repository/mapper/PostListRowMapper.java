@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * RowMapper для маппинга списка постов с пагинацией.
@@ -24,7 +25,7 @@ public class PostListRowMapper implements RowMapper<PostResponse> {
         Integer likesCount = rs.getInt("likes_count");
         Integer commentsCount = rs.getInt("comments_count");
 
-        return new PostResponse(id, title, text, java.util.List.of(), likesCount, commentsCount);
+        return new PostResponse(id, title, text, List.of(), likesCount, commentsCount);
     }
 
     /**

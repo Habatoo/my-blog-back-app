@@ -17,7 +17,7 @@ class CommentServiceGetCommentsByPostIdTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен возвращать комментарии из кеша при наличии")
-    void shouldReturnCommentsFromCacheIfExist() {
+    void shouldReturnCommentsFromCacheIfExistTest() {
         List<CommentResponse> repoComments = List.of(createCommentResponse(VALID_COMMENT_ID, VALID_POST_ID, COMMENT_TEXT));
         when(postService.postExists(VALID_POST_ID)).thenReturn(true);
         when(commentRepository.findByPostId(VALID_POST_ID)).thenReturn(repoComments);
@@ -33,7 +33,7 @@ class CommentServiceGetCommentsByPostIdTest extends CommentServiceTestBase {
 
     @Test
     @DisplayName("Должен выбрасывать исключение при несуществующем посте")
-    void shouldThrowExceptionIfPostDoesNotExist() {
+    void shouldThrowExceptionIfPostDoesNotExistTest() {
         when(postService.postExists(INVALID_POST_ID)).thenReturn(false);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,

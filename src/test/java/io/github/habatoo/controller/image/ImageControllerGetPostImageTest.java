@@ -22,9 +22,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода getPostImage для получения изображения поста.")
 class ImageControllerGetPostImageTest extends ImageControllerTestBase {
 
-    @DisplayName("Должен вернуть изображение JPEG с правильным Content-Type")
     @Test
-    void shouldReturnJpegImageWithCorrectContentType() {
+    @DisplayName("Должен вернуть изображение JPEG с правильным Content-Type")
+    void shouldReturnJpegImageWithCorrectContentTypeTest() {
         byte[] imageData = createJpegImageData();
         ImageResponse imageResponse = createImageResponse(imageData, MediaType.IMAGE_JPEG);
 
@@ -37,9 +37,9 @@ class ImageControllerGetPostImageTest extends ImageControllerTestBase {
         assertEquals(MediaType.IMAGE_JPEG, response.getHeaders().getContentType());
     }
 
-    @DisplayName("Должен вернуть изображение PNG с правильным Content-Type")
     @Test
-    void shouldReturnPngImageWithCorrectContentType() {
+    @DisplayName("Должен вернуть изображение PNG с правильным Content-Type")
+    void shouldReturnPngImageWithCorrectContentTypeTest() {
         byte[] imageData = createPngImageData();
         ImageResponse imageResponse = createImageResponse(imageData, MediaType.IMAGE_PNG);
 
@@ -52,9 +52,9 @@ class ImageControllerGetPostImageTest extends ImageControllerTestBase {
         assertEquals(MediaType.IMAGE_PNG, response.getHeaders().getContentType());
     }
 
-    @DisplayName("Должен вернуть пустое изображение с octet-stream Content-Type")
     @Test
-    void shouldReturnEmptyImageWithOctetStreamContentType() {
+    @DisplayName("Должен вернуть пустое изображение с octet-stream Content-Type")
+    void shouldReturnEmptyImageWithOctetStreamContentTypeTest() {
         byte[] emptyData = createEmptyImageData();
         ImageResponse imageResponse = createImageResponse(emptyData, MediaType.APPLICATION_OCTET_STREAM);
 
@@ -70,7 +70,7 @@ class ImageControllerGetPostImageTest extends ImageControllerTestBase {
     @DisplayName("Должен корректно обработать различные идентификаторы постов")
     @ParameterizedTest
     @ValueSource(longs = {1L, 5L, 10L, 50L, 100L})
-    void shouldHandleDifferentPostIds(Long postId) {
+    void shouldHandleDifferentPostIdsTest(Long postId) {
         byte[] imageData = createJpegImageData();
         ImageResponse imageResponse = createImageResponse(imageData, MediaType.IMAGE_JPEG);
 
@@ -85,7 +85,7 @@ class ImageControllerGetPostImageTest extends ImageControllerTestBase {
     @DisplayName("Должен обработать различные MediaType из сервиса")
     @ParameterizedTest
     @MethodSource("provideMediaTypes")
-    void shouldHandleDifferentMediaTypesFromService(MediaType mediaType) {
+    void shouldHandleDifferentMediaTypesFromServiceTest(MediaType mediaType) {
         byte[] imageData = createJpegImageData();
         ImageResponse imageResponse = createImageResponse(imageData, mediaType);
 

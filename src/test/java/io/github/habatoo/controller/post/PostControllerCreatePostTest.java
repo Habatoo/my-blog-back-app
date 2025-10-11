@@ -23,9 +23,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода createPost для обработки создания постов.")
 class PostControllerCreatePostTest extends PostControllerTestBase {
 
-    @DisplayName("Должен создать пост и вернуть 201 статус")
     @Test
-    void shouldCreatePostAndReturnCreatedStatus() {
+    @DisplayName("Должен создать пост и вернуть 201 статус")
+    void shouldCreatePostAndReturnCreatedStatusTest() {
         PostCreateRequest createRequest = createPostCreateRequest(POST_TITLE, POST_TEXT, POST_TAGS);
         PostResponse expectedResponse = createPostResponse(3L, POST_TITLE, POST_TEXT,
                 POST_TAGS, 0, 0);
@@ -44,7 +44,7 @@ class PostControllerCreatePostTest extends PostControllerTestBase {
     @DisplayName("Должен создать пост с различными тегами")
     @ParameterizedTest
     @MethodSource("provideDifferentTags")
-    void shouldCreatePostWithDifferentTags(List<String> tags) {
+    void shouldCreatePostWithDifferentTagsTest(List<String> tags) {
         PostCreateRequest createRequest = createPostCreateRequest(POST_TITLE, POST_TEXT, tags);
         PostResponse expectedResponse = createPostResponse(1L, POST_TITLE, POST_TEXT, tags, 0, 0);
 

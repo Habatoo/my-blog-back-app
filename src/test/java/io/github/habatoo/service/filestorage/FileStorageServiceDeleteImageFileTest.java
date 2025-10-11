@@ -18,9 +18,9 @@ import static org.mockito.Mockito.when;
 @DisplayName("Тесты метода resolveFilePath")
 class FileStorageServiceDeleteImageFileTest extends FileStorageServiceTestBase {
 
-    @DisplayName("Должен удалить файл изображения")
     @Test
-    void shouldDeleteImageFile() throws IOException {
+    @DisplayName("Должен удалить файл изображения")
+    void shouldDeleteImageFileTest() throws IOException {
         String filename = "123/image.jpg";
         byte[] content = "content".getBytes();
         Path filePath = baseUploadPath.resolve(filename);
@@ -33,9 +33,9 @@ class FileStorageServiceDeleteImageFileTest extends FileStorageServiceTestBase {
         assertFalse(fileExists(filePath));
     }
 
-    @DisplayName("Должен игнорировать удаление несуществующего файла")
     @Test
-    void shouldIgnoreDeletingNonExistentFile() throws IOException {
+    @DisplayName("Должен игнорировать удаление несуществующего файла")
+    void shouldIgnoreDeletingNonExistentFileTest() {
         String filename = "nonexistent/file.jpg";
         Path filePath = baseUploadPath.resolve(filename);
 
@@ -47,7 +47,7 @@ class FileStorageServiceDeleteImageFileTest extends FileStorageServiceTestBase {
     @DisplayName("Должен удалять файлы из разных путей")
     @ParameterizedTest
     @MethodSource("filenameProvider")
-    void shouldDeleteFilesFromDifferentPaths(String filename) throws IOException {
+    void shouldDeleteFilesFromDifferentPathsTest(String filename) throws IOException {
         byte[] content = "content".getBytes();
         Path filePath = baseUploadPath.resolve(filename);
 

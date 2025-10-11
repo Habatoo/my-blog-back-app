@@ -5,7 +5,6 @@ import io.github.habatoo.service.impl.FileNameGeneratorImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -21,7 +20,7 @@ class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен сгенерировать корректное имя файла для различных расширений")
     @ParameterizedTest
     @MethodSource("fileExtensionProvider")
-    void shouldGenerateCorrectFileNameForDifferentExtensions(String originalFilename, String expectedExtension) {
+    void shouldGenerateCorrectFileNameForDifferentExtensionsTest(String originalFilename, String expectedExtension) {
         String result = fileNameGenerator.generateFileName(originalFilename);
 
         assertNotNull(result);
@@ -40,7 +39,7 @@ class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {"file", "file.", "FILE", "  "})
-    void shouldUseDefaultExtensionForFilesWithoutExtension(String originalFilename) {
+    void shouldUseDefaultExtensionForFilesWithoutExtensionTest(String originalFilename) {
         String result = fileNameGenerator.generateFileName(originalFilename);
 
         assertNotNull(result);
@@ -50,15 +49,15 @@ class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен использовать расширение по умолчанию для файлов с пустым расширением")
     @ParameterizedTest
     @ValueSource(strings = {"file.", "image.", "test."})
-    void shouldUseDefaultExtensionForEmptyExtension(String originalFilename) {
+    void shouldUseDefaultExtensionForEmptyExtensionTest(String originalFilename) {
         String result = fileNameGenerator.generateFileName(originalFilename);
 
         assertEquals(DEFAULT_EXTENSION, extractExtension(result));
     }
 
-    @DisplayName("Должен генерировать уникальные имена файлов")
     @Test
-    void shouldGenerateUniqueFileNames() {
+    @DisplayName("Должен генерировать уникальные имена файлов")
+    void shouldGenerateUniqueFileNamesTest() {
         String originalFilename = "image.jpg";
 
         String result1 = fileNameGenerator.generateFileName(originalFilename);
@@ -66,16 +65,16 @@ class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
 
         assertNotNull(result1);
         assertNotNull(result2);
-        assertTrue(!result1.equals(result2), "Generated filenames should be different");
+        assertNotEquals(result1, result2, "Generated filenames should be different");
 
         String random1 = extractRandom(result1);
         String random2 = extractRandom(result2);
-        assertTrue(!random1.equals(random2), "Random parts should be different");
+        assertNotEquals(random1, random2, "Random parts should be different");
     }
 
-    @DisplayName("Должен генерировать корректный формат имени файла")
     @Test
-    void shouldGenerateCorrectFileNameFormat() {
+    @DisplayName("Должен генерировать корректный формат имени файла")
+    void shouldGenerateCorrectFileNameFormatTest() {
         String originalFilename = "test.image.jpg";
 
         String result = fileNameGenerator.generateFileName(originalFilename);
@@ -95,7 +94,7 @@ class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен обрабатывать файлы с точками в имени")
     @ParameterizedTest
     @MethodSource("multipleDotsFileProvider")
-    void shouldHandleFilesWithDotsInName(String originalFilename, String expectedExtension) {
+    void shouldHandleFilesWithDotsInNameTest(String originalFilename, String expectedExtension) {
         String result = fileNameGenerator.generateFileName(originalFilename);
 
         assertEquals(expectedExtension, extractExtension(result));
@@ -104,7 +103,7 @@ class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен генерировать имена с разными расширениями по умолчанию")
     @ParameterizedTest
     @MethodSource("defaultExtensionProvider")
-    void shouldGenerateNamesWithDifferentDefaultExtensions(String defaultExt) {
+    void shouldGenerateNamesWithDifferentDefaultExtensionsTest(String defaultExt) {
         FileNameGenerator generator = new FileNameGeneratorImpl(defaultExt);
 
         String result = generator.generateFileName("file");
@@ -115,7 +114,7 @@ class FileNameGeneratorGenerateFileNameTest extends FileNameGeneratorTestBase {
     @DisplayName("Должен обрабатывать специальные символы в именах файлов")
     @ParameterizedTest
     @MethodSource("specialCharactersFileProvider")
-    void shouldHandleSpecialCharactersInFilenames(String originalFilename, String expectedExtension) {
+    void shouldHandleSpecialCharactersInFilenamesTest(String originalFilename, String expectedExtension) {
 
         String result = fileNameGenerator.generateFileName(originalFilename);
 

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.provider.Arguments;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,9 +36,10 @@ public abstract class FileStorageServiceTestBase {
     protected FileNameGenerator fileNameGenerator;
     protected PathResolver pathResolver;
     protected Path baseUploadPath;
+    protected MockedStatic<Files> filesMock;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         fileNameGenerator = mock(FileNameGenerator.class);
         pathResolver = mock(PathResolver.class);
 
@@ -63,6 +65,29 @@ public abstract class FileStorageServiceTestBase {
                         }
                     });
         }
+        if (filesMock != null) {
+            filesMock.close();
+        }
+    }
+
+    protected static Stream<Arguments> postIdProvider() {
+        return Stream.of(
+                Arguments.of(1L),
+                Arguments.of(100L),
+                Arguments.of(9999L)
+        );
+    }
+
+    protected static Stream<Arguments> filenameProvider() {
+        return Stream.of(
+                Arguments.of("123/image1.jpg"),
+                Arguments.of("456/nested/image2.png"),
+                Arguments.of("789/file3.gif")
+        );
+    }
+
+    protected static MockMultipartFile getFile(String filename, byte[] fileContent) {
+        return new MockMultipartFile("image", filename, "image/jpeg", fileContent);
     }
 
     protected MultipartFile createMockMultipartFile(String filename, byte[] content) throws IOException {
@@ -84,32 +109,5 @@ public abstract class FileStorageServiceTestBase {
 
     protected boolean directoryExists(Path dirPath) {
         return Files.exists(dirPath) && Files.isDirectory(dirPath);
-    }
-
-    protected static Stream<Arguments> postIdProvider() {
-        return Stream.of(
-                Arguments.of(1L),
-                Arguments.of(100L),
-                Arguments.of(9999L)
-        );
-    }
-
-    protected static Stream<Arguments> filenameProvider() {
-        return Stream.of(
-                Arguments.of("123/image1.jpg"),
-                Arguments.of("456/nested/image2.png"),
-                Arguments.of("789/file3.gif")
-        );
-    }
-
-    protected static Stream<Arguments> invalidPostIdProvider() {
-        return Stream.of(
-                Arguments.of(-1L),
-                Arguments.of(0L)
-        );
-    }
-
-    protected static MockMultipartFile getFile(String filename, byte[] fileContent) {
-        return new MockMultipartFile("image", filename, "image/jpeg", fileContent);
     }
 }

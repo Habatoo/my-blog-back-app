@@ -13,14 +13,14 @@ class ImageValidatorValidatePostIdTest extends ImageValidatorTestBase {
     @ParameterizedTest
     @ValueSource(longs = {1, 2, 100, Long.MAX_VALUE})
     @DisplayName("Не должен выбрасывать исключение для валидного postId")
-    void shouldNotThrowForValidPostId(Long postId) {
+    void shouldNotThrowForValidPostIdTest(Long postId) {
         assertDoesNotThrow(() -> imageValidator.validatePostId(postId));
     }
 
     @ParameterizedTest
     @ValueSource(longs = {0, -1, -999, Long.MIN_VALUE})
     @DisplayName("Должен выбрасывать исключение для невалидного postId")
-    void shouldThrowForInvalidPostId(Long postId) {
+    void shouldThrowForInvalidPostIdTest(Long postId) {
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> imageValidator.validatePostId(postId));
         assertTrue(ex.getMessage().startsWith("Invalid postId"));
@@ -28,7 +28,7 @@ class ImageValidatorValidatePostIdTest extends ImageValidatorTestBase {
 
     @Test
     @DisplayName("Должен выбрасывать исключение для null postId")
-    void shouldThrowForNullPostId() {
+    void shouldThrowForNullPostIdTest() {
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> imageValidator.validatePostId(null));
         assertTrue(ex.getMessage().startsWith("Invalid postId"));

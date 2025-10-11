@@ -17,9 +17,9 @@ import static org.mockito.Mockito.doNothing;
 @DisplayName("Тесты метода updatePostImage для обновления изображения поста.")
 class ImageControllerUpdatePostImageTest extends ImageControllerTestBase {
 
-    @DisplayName("Должен обновить изображение поста и вернуть 200 статус")
     @Test
-    void shouldUpdatePostImageAndReturnOkStatus() {
+    @DisplayName("Должен обновить изображение поста и вернуть 200 статус")
+    void shouldUpdatePostImageAndReturnOkStatusTest() {
         doNothing().when(imageService).updatePostImage(VALID_POST_ID, multipartFile);
 
         ResponseEntity<Void> response = imageController.updatePostImage(VALID_POST_ID, multipartFile);
@@ -31,7 +31,7 @@ class ImageControllerUpdatePostImageTest extends ImageControllerTestBase {
     @DisplayName("Должен обновить изображение для различных постов")
     @ParameterizedTest
     @ValueSource(longs = {1L, 10L, 100L, 1000L})
-    void shouldUpdateImageForDifferentPosts(Long postId) {
+    void shouldUpdateImageForDifferentPostsTest(Long postId) {
         doNothing().when(imageService).updatePostImage(postId, multipartFile);
 
         ResponseEntity<Void> response = imageController.updatePostImage(postId, multipartFile);

@@ -14,9 +14,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Тесты метода detect")
 class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBase {
 
-    @DisplayName("Должен определить JPEG формат для валидных данных")
     @Test
-    void shouldDetectJpegForValidData() {
+    @DisplayName("Должен определить JPEG формат для валидных данных")
+    void shouldDetectJpegForValidDataTest() {
         byte[] jpegData = createJpegData();
 
         MediaType result = contentTypeDetector.detect(jpegData);
@@ -24,9 +24,9 @@ class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBas
         assertEquals(MediaType.IMAGE_JPEG, result);
     }
 
-    @DisplayName("Должен определить PNG формат для валидных данных")
     @Test
-    void shouldDetectPngForValidData() {
+    @DisplayName("Должен определить PNG формат для валидных данных")
+    void shouldDetectPngForValidDataTest() {
         byte[] pngData = createPngData();
 
         MediaType result = contentTypeDetector.detect(pngData);
@@ -37,7 +37,7 @@ class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBas
     @DisplayName("Должен определить JPEG формат для различных валидных JPEG данных")
     @ParameterizedTest
     @MethodSource("jpegDataProvider")
-    void shouldDetectJpegForVariousValidData(byte[] jpegData) {
+    void shouldDetectJpegForVariousValidDataTest(byte[] jpegData) {
         MediaType result = contentTypeDetector.detect(jpegData);
 
         assertEquals(MediaType.IMAGE_JPEG, result);
@@ -46,7 +46,7 @@ class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBas
     @DisplayName("Должен определить PNG формат для различных валидных PNG данных")
     @ParameterizedTest
     @MethodSource("pngDataProvider")
-    void shouldDetectPngForVariousValidData(byte[] pngData) {
+    void shouldDetectPngForVariousValidDataTest(byte[] pngData) {
         MediaType result = contentTypeDetector.detect(pngData);
 
         assertEquals(MediaType.IMAGE_PNG, result);
@@ -55,24 +55,24 @@ class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBas
     @DisplayName("Должен вернуть OCTET_STREAM для невалидных данных изображения")
     @ParameterizedTest
     @MethodSource("invalidImageDataProvider")
-    void shouldReturnOctetStreamForInvalidImageData(byte[] invalidData) {
+    void shouldReturnOctetStreamForInvalidImageDataTest(byte[] invalidData) {
         MediaType result = contentTypeDetector.detect(invalidData);
 
         assertEquals(MediaType.APPLICATION_OCTET_STREAM, result);
     }
 
-    @DisplayName("Должен выбросить исключение для null данных")
     @Test
-    void shouldThrowExceptionForNullData() {
+    @DisplayName("Должен выбросить исключение для null данных")
+    void shouldThrowExceptionForNullDataTest() {
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> contentTypeDetector.detect(null));
 
         assertEquals("Image data cannot be null", exception.getMessage());
     }
 
-    @DisplayName("Должен выбросить исключение для пустого массива данных")
     @Test
-    void shouldThrowExceptionForEmptyData() {
+    @DisplayName("Должен выбросить исключение для пустого массива данных")
+    void shouldThrowExceptionForEmptyDataTest() {
         byte[] emptyData = new byte[0];
 
         IllegalStateException exception = assertThrows(IllegalStateException.class,
@@ -84,7 +84,7 @@ class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBas
     @DisplayName("Должен корректно обрабатывать граничные случаи длины данных")
     @ParameterizedTest
     @MethodSource("edgeCasesDataProvider")
-    void shouldHandleEdgeCasesDataLength(byte[] data) {
+    void shouldHandleEdgeCasesDataLengthTest(byte[] data) {
         MediaType result = contentTypeDetector.detect(data);
 
         assertTrue(result == MediaType.APPLICATION_OCTET_STREAM ||
@@ -92,9 +92,9 @@ class ImageContentTypeDetectorDetectTest extends ImageContentTypeDetectorTestBas
                 result == MediaType.IMAGE_PNG);
     }
 
-    @DisplayName("Должен отдавать приоритет JPEG при конфликте сигнатур")
     @Test
-    void shouldPrioritizeJpegOverPng() {
+    @DisplayName("Должен отдавать приоритет JPEG при конфликте сигнатур")
+    void shouldPrioritizeJpegOverPngTest() {
         byte[] conflictingData = new byte[]{
                 (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, // JPEG сигнатура
                 (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A // PNG сигнатура
